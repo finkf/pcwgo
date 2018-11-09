@@ -42,6 +42,11 @@ type Version struct {
 	Version string `json:"version"`
 }
 
+// Users defines the repsonse data for requests to list the system's users.
+type Users struct {
+	Users []User `json:"users"`
+}
+
 // NewErrorResponse creates a new ErrorResponse with
 // the given code and cause. The status text is calculated
 // automatically using http.StatusText.
