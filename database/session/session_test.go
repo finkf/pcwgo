@@ -47,7 +47,6 @@ func TestNewSession(t *testing.T) {
 		if !found {
 			t.Fatalf("cannot find session Auth: %s", s.Auth)
 		}
-		got.Expires = s.Expires
 		if got != s {
 			t.Fatalf("expected %v; got %v", s, got)
 		}

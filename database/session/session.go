@@ -64,13 +64,14 @@ func New(db database.DB, u user.User) (Session, error) {
 	if err != nil {
 		return Session{}, err
 	}
+	expires := time.Now().Add(Expires).Unix()
 	// Insert new session for the user.
 	const stmt2 = "INSERT INTO " + Name + "(Auth,UserID,Expires)values(?,?,?)"
-	_, err = database.Exec(db, stmt2, auth, u.ID, time.Now().Add(Expires).Unix())
+	_, err = database.Exec(db, stmt2, auth, u.ID, expires)
 	if err != nil {
 		return Session{}, err
 	}
-	return Session{Auth: auth, User: u}, nil
+	return Session{Auth: auth, User: u, Expires: expires}, nil
 }
 
 func FindByID(db database.DB, id string) (Session, bool, error) {
