@@ -26,8 +26,8 @@ func (l LoginRequest) String() string {
 
 // CreateUserRequest defines the data to create new users.
 type CreateUserRequest struct {
-	User     user.User
-	Password string `json:"password"`
+	User     user.User `json:"user"`
+	Password string    `json:"password"`
 }
 
 // ErrorResponse defines the data of error responses
