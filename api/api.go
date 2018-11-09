@@ -44,7 +44,7 @@ type Version struct {
 
 // Users defines the repsonse data for requests to list the system's users.
 type Users struct {
-	Users []User `json:"users"`
+	Users []user.User `json:"users"`
 }
 
 // NewErrorResponse creates a new ErrorResponse with
