@@ -29,9 +29,9 @@ var table = "" +
 	")"
 
 type Session struct {
-	User    user.User
-	Auth    string
-	Expires int64
+	User    user.User `json:"user"`
+	Auth    string    `json:"auth"`
+	Expires int64     `json:"expires"`
 }
 
 func (s Session) Expired() bool {
