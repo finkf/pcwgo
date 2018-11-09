@@ -8,7 +8,9 @@ import (
 	"github.com/finkf/pcwgo/database/user"
 )
 
+// Name of the the database table.
 const Name = "projects"
+
 const table = "" +
 	Name + " (" +
 	"ID INTEGER NOT NULL PRIMARY KEY /*!40101 AUTO_INCREMENT */," +
