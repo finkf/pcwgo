@@ -1,4 +1,2 @@
-github.com/finkf/logger v0.3.2 h1:ulZ2je6OhSzHj41QXOq0FUdjdspBY28+YDibCb5gspI=
-github.com/finkf/logger v0.3.2/go.mod h1:i+Ddxrn8mKAmDxbJhSl2A69Hr7ZJ44PfFRyxSGLV6TA=
 rsc.io/sqlite v0.0.0-20151027002647-c7a7bd4dbacb h1:MjPJB3CPzDABnyEgV3L8sINfsihcGbAyuL90NyqDiDE=
 rsc.io/sqlite v0.0.0-20151027002647-c7a7bd4dbacb/go.mod h1:fqHuveM9iIqMzjD0WiZIvKYMty/WqTo2bxE9+zC54WE=
