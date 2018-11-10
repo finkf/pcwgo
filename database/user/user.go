@@ -125,6 +125,7 @@ func FindByEmail(db database.DB, email string) (User, bool, error) {
 	return selectUser(db, stmt, email)
 }
 
+// All returns all users in the database.
 func All(db database.DB) ([]User, error) {
 	const stmt = "SELECT ID,Name,Email,Institute,Admin FROM " + Name
 	rows, err := database.Query(db, stmt)
