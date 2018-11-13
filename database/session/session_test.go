@@ -50,5 +50,8 @@ func TestNewSession(t *testing.T) {
 		if got != s {
 			t.Fatalf("expected %v; got %v", s, got)
 		}
+		if err := DeleteByUserID(db, u.ID); err != nil {
+			t.Fatalf("got error: %v", err)
+		}
 	})
 }

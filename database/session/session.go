@@ -53,13 +53,9 @@ func CreateTable(db database.DB) error {
 	return err
 }
 
+// New creates a new unique session for the given user in the database
+// and returns the new session.
 func New(db database.DB, u user.User) (Session, error) {
-	// Delete2 any old user's session.
-	const stmt1 = "DELETE FROM " + Name + " WHERE UserID=?"
-	_, err := database.Exec(db, stmt1, u.ID)
-	if err != nil {
-		return Session{}, err
-	}
 	auth, err := genAuth()
 	if err != nil {
 		return Session{}, err
@@ -80,6 +76,12 @@ func FindByID(db database.DB, id string) (Session, bool, error) {
 		return s, found, err
 	}
 	return s, found, err
+}
+
+func DeleteByUserID(db database.DB, id int64) error {
+	const stmt = "DELETE FROM " + Name + " WHERE UserID=?"
+	_, err := database.Exec(db, stmt, id)
+	return err
 }
 
 func selectSession(db database.DB, id string) (Session, bool, error) {
