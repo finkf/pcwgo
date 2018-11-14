@@ -47,6 +47,25 @@ type Users struct {
 	Users []user.User `json:"users"`
 }
 
+// Book defines the response data for books.
+type Book struct {
+	Author      string `json:"author"`
+	Title       string `json:"title"`
+	Year        int    `json:"year"`
+	Language    string `json:"language"`
+	ProfilerURL string `json:"profilerUrl"`
+	BookID      int    `json:"bookId"`
+	ProjectID   int    `json:"projectId"`
+	Pages       int    `json:"pages"`
+	PageIDs     []int  `json:"pageIds"`
+	IsBook      bool   `json:"isBook"`
+}
+
+// Books defines a list of books.
+type Books struct {
+	Books []Book `json:"books"`
+}
+
 // NewErrorResponse creates a new ErrorResponse with
 // the given code and cause. The status text is calculated
 // automatically using http.StatusText.
