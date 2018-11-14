@@ -51,9 +51,9 @@ type Users struct {
 type Book struct {
 	Author      string `json:"author"`
 	Title       string `json:"title"`
-	Year        int    `json:"year"`
 	Language    string `json:"language"`
 	ProfilerURL string `json:"profilerUrl"`
+	Year        int    `json:"year"`
 	BookID      int    `json:"bookId"`
 	ProjectID   int    `json:"projectId"`
 	Pages       int    `json:"pages"`
