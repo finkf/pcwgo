@@ -66,6 +66,31 @@ type Books struct {
 	Books []Book `json:"books"`
 }
 
+type Line struct {
+	ImgFile              string    `json:"imgFile"`
+	Cor                  string    `json:"cor"`
+	OCR                  string    `json:"ocr"`
+	LineID               int       `json:"lineId"`
+	PageID               int       `json:"pageId"`
+	ProjectID            int       `json:"projectId"`
+	Cuts                 []int     `json:"cuts"`
+	Confidences          []float64 `json:"confidences"`
+	AverageConfidence    float64   `json:"averageConfidence"`
+	IsFullyCorrected     bool      `json:"isFullyCorrected"`
+	IsPartiallyCorrected bool      `json:"isPartiallyCorrected"`
+	Box                  Box       `json:"box"`
+}
+
+// Box defines the bounding box in an image.
+type Box struct {
+	Left   int `json:"left"`
+	Right  int `json:"right"`
+	Top    int `json:"top"`
+	Bottom int `json:"bottom"`
+	Width  int `json:"width"`
+	Height int `json:"heigth"`
+}
+
 // NewErrorResponse creates a new ErrorResponse with
 // the given code and cause. The status text is calculated
 // automatically using http.StatusText.
