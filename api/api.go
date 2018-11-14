@@ -66,6 +66,17 @@ type Books struct {
 	Books []Book `json:"books"`
 }
 
+// Page defines a page in a book.
+type Page struct {
+	PageID    int    `json:"pageId"`
+	projectID int    `json:"projectId"`
+	OCRFile   string `json:"ocrFile"`
+	ImgFile   string `json:"imgFile"`
+	Box       Box    `json:"box"`
+	Lines     []Line `json:"lines"`
+}
+
+// Line defines the line of a page in a book.
 type Line struct {
 	ImgFile              string    `json:"imgFile"`
 	Cor                  string    `json:"cor"`
