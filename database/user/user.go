@@ -1,9 +1,9 @@
 package user
 
 import (
-	"bytes"
 	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"strconv"
@@ -28,8 +28,8 @@ var table = "" +
 	"Name VARCHAR(255) NOT NULL," +
 	"Institute VARCHAR(255) NOT NULL," +
 	"Email VARCHAR(255) NOT NULL UNIQUE," +
-	"Hash BINARY(" + strconv.Itoa(HashLength) + ")," +
-	"Salt BINARY(" + strconv.Itoa(SaltLength) + ")," +
+	"Hash VARCHAR(" + strconv.Itoa(HashLength*2) + ")," +
+	"Salt VARCHAR(" + strconv.Itoa(SaltLength*2) + ")," +
 	"Admin BOOLEAN DEFAULT(false) NOT NULL" +
 	")"
 
@@ -89,15 +89,19 @@ func AuthenticateUser(db database.DB, user User, password string) error {
 	if !rows.Next() {
 		return fmt.Errorf("invalid user: %v", user)
 	}
-	var hash, salt []byte
+	var hash, salt string
 	if err = rows.Scan(&hash, &salt); err != nil {
 		return fmt.Errorf("internal error: cannot scan row")
 	}
-	trueHash, err := genSaltedHash(password, salt)
+	saltb, err := hex.DecodeString(salt)
 	if err != nil {
 		return err
 	}
-	if !bytes.Equal(trueHash, hash) {
+	trueHash, err := genSaltedHash(password, saltb)
+	if err != nil {
+		return err
+	}
+	if trueHash != hash {
 		return fmt.Errorf("invalid authentification for user: %v", user)
 	}
 	return nil
@@ -168,16 +172,16 @@ func getUserFromRow(rows *sql.Rows) (User, error) {
 	return user, nil
 }
 
-func genSaltAndHash(password string) ([]byte, []byte, error) {
+func genSaltAndHash(password string) (string, string, error) {
 	salt, err := genSalt()
 	if err != nil {
-		return nil, nil, err
+		return "", "", err
 	}
 	hash, err := genSaltedHash(password, salt)
 	if err != nil {
-		return nil, nil, err
+		return "", "", err
 	}
-	return hash, salt, nil
+	return hash, hex.EncodeToString(salt), nil
 }
 
 func genSalt() ([]byte, error) {
@@ -189,10 +193,10 @@ func genSalt() ([]byte, error) {
 	return salt, nil
 }
 
-func genSaltedHash(password string, salt []byte) ([]byte, error) {
+func genSaltedHash(password string, salt []byte) (string, error) {
 	hash, err := scrypt.Key([]byte(password), salt, 1<<14, 8, 1, HashLength)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return hash, nil
+	return hex.EncodeToString(hash), nil
 }
