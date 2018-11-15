@@ -53,6 +53,7 @@ type Book struct {
 	Title       string `json:"title"`
 	Language    string `json:"language"`
 	ProfilerURL string `json:"profilerUrl"`
+	Description string `json:"description"`
 	Year        int    `json:"year"`
 	ProjectID   int    `json:"projectId"`
 	Pages       int    `json:"pages"`
