@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/finkf/pcwgo/database/session"
 	"github.com/finkf/pcwgo/database/user"
@@ -33,7 +35,7 @@ func Login(host, email, password string) (*Client, error) {
 		Password: password,
 	}
 	var s session.Session
-	err := c.post(fmt.Sprintf("%s/login", host), login, &s)
+	err := c.post(c.url("/login"), login, &s)
 	if err != nil {
 		return nil, err
 	}
@@ -44,74 +46,95 @@ func Login(host, email, password string) (*Client, error) {
 
 func (c Client) getLogin() (session.Session, error) {
 	var s session.Session
-	err := c.get(fmt.Sprintf("%s/login?%s=%s",
-		c.Host, Auth, c.Session.Auth), &s)
+	err := c.get(c.url("/login", Auth, c.Session.Auth), &s)
 	return s, err
 }
 
-func (c Client) getUsers() ([]user.User, error) {
+func (c Client) GetUsers() ([]user.User, error) {
 	var res []user.User
-	err := c.get(fmt.Sprintf("%s/users?auth=%s",
-		c.Host, c.Session.Auth), &res)
+	err := c.get(c.url("/users", Auth, c.Session.Auth), &res)
 	return res, err
 }
 
-func (c Client) getUser(id int64) (user.User, error) {
+func (c Client) GetUser(id int64) (user.User, error) {
 	var res user.User
-	err := c.get(fmt.Sprintf("%s/users/%d?auth=%s",
-		c.Host, id, c.Session.Auth), &res)
+	err := c.get(c.url(userPath(id), Auth, c.Session.Auth), &res)
 	return res, err
 }
 
-func (c Client) putUser(u CreateUserRequest) (user.User, error) {
+func (c Client) PutUser(u CreateUserRequest) (user.User, error) {
 	var res user.User
-	err := c.put(fmt.Sprintf("%s/users/%d?auth=%s",
-		c.Host, u.User.ID, c.Session.Auth), u, &res)
+	url := c.url(userPath(u.User.ID), Auth, c.Session.Auth)
+	err := c.put(url, u, &res)
 	return res, err
 }
 
-func (c Client) postUser(u CreateUserRequest) (user.User, error) {
+func (c Client) PostUser(u CreateUserRequest) (user.User, error) {
 	var res user.User
-	err := c.post(fmt.Sprintf("%s/create-user?auth=%s",
-		c.Host, c.Session.Auth), u, &res)
+	url := c.url("/users", Auth, c.Session.Auth)
+	err := c.post(url, u, &res)
 	return res, err
 }
 
-func (c Client) getAPIVersion() (Version, error) {
+func (c Client) GetAPIVersion() (Version, error) {
 	var res Version
-	err := c.get(fmt.Sprintf("%s/api-version", c.Host), &res)
+	err := c.get(c.url("/api-version"), &res)
 	return res, err
 }
 
-func (c Client) postZIP(zip io.Reader) (Book, error) {
+func (c Client) PostZIP(zip io.Reader) (Book, error) {
 	var book Book
-	url := fmt.Sprintf("%s/books?auth=%s", c.Host, c.Session.Auth)
-	if err := c.doPost(url, "application/zip", zip, &book); err != nil {
-		return Book{}, err
-	}
-	return book, nil
+	url := c.url("/books", Auth, c.Session.Auth)
+	err := c.doPost(url, "application/zip", zip, &book)
+	return book, err
 }
 
-func (c Client) postBook(book Book) error {
-	url := fmt.Sprintf("%s/books/%d?auth=%s",
-		c.Host, book.ProjectID, c.Session.Auth)
+func (c Client) PostBook(book Book) error {
+	url := c.url(bookPath(book.ProjectID), Auth, c.Session.Auth)
 	return c.post(url, book, nil)
 }
 
-func (c Client) getPage(bookID, pageID int) (Page, error) {
+func (c Client) GetPage(bookID, pageID int) (Page, error) {
 	var page Page
-	url := fmt.Sprintf("%s/books/%d/pages/%d?auth=%s",
-		c.Host, bookID, pageID, c.Session.Auth)
-	if err := c.get(url, &page); err != nil {
-		return Page{}, err
-	}
-	return page, nil
+	url := c.url(pagePath(bookID, pageID), Auth, c.Session.Auth)
+	err := c.get(url, &page)
+	return page, err
 }
 
-func (c Client) postProfile(bookID int) error {
-	url := fmt.Sprintf("%s/books/%d/profile?auth=%s",
-		c.Host, bookID, c.Session.Auth)
+func (c Client) PostProfile(bookID int) error {
+	url := c.url(bookPath(bookID)+"/profile", Auth, c.Session.Auth)
 	return c.post(url, nil, nil)
+}
+
+func (c Client) url(path string, keyvals ...string) string {
+	var b strings.Builder
+	b.WriteString(c.Host)
+	b.WriteString(path)
+	pre := '?'
+	for i := 0; i+1 < len(keyvals); i += 2 {
+		b.WriteRune(pre)
+		b.WriteString(url.PathEscape(keyvals[i]))
+		b.WriteRune('=')
+		b.WriteString(url.PathEscape(keyvals[i+1]))
+		pre = '&'
+	}
+	return b.String()
+}
+
+func userPath(id int64) string {
+	return formatID("/users/%d", id)
+}
+
+func bookPath(id int) string {
+	return formatID("/books/%d", id)
+}
+
+func pagePath(id, pageid int) string {
+	return formatID("/books/%d/pages", id, pageid)
+}
+
+func formatID(url string, args ...interface{}) string {
+	return fmt.Sprintf(url, args...)
 }
 
 func (c Client) get(url string, out interface{}) error {
