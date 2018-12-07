@@ -1,7 +1,13 @@
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/finkf/logger v0.3.2/go.mod h1:i+Ddxrn8mKAmDxbJhSl2A69Hr7ZJ44PfFRyxSGLV6TA=
 github.com/finkf/pcwgo/database v0.0.0-20181108095749-32599b07b19e/go.mod h1:cwNNqsd0kM3jUgocASOVOV/2tOSxYRxCHm6kVk8Ilc0=
+github.com/finkf/pcwgo/database v0.0.0-20181109092413-d7f3ed06f2d4 h1:sYX59Ww6fyQncrhJfesw/XWVjCY+TWqvgyM9xx88y5I=
+github.com/finkf/pcwgo/database v0.0.0-20181109092413-d7f3ed06f2d4/go.mod h1:OJ4e8mLPCzQgE0Kxm4i3awzthDfztKzCoShhilxKNag=
+github.com/finkf/pcwgo/database/session v0.0.0-20181115111556-598603681d14 h1:rO5tvwtOHfu8ho/zG0ohfMuHBZRtMt97ClGA1Op8QgE=
+github.com/finkf/pcwgo/database/session v0.0.0-20181115111556-598603681d14/go.mod h1:y/MwlYKDkqCBL+O3dphAifngF1RrZWnK9YA6d03wH/M=
 github.com/finkf/pcwgo/database/sqlite v0.0.0-20181108095749-32599b07b19e/go.mod h1:EGzDqa8mydjlnCaiCUehpMrVhMuPi7jDW7lI1A1NtBA=
+github.com/finkf/pcwgo/database/sqlite v0.0.0-20181109092413-d7f3ed06f2d4/go.mod h1:EGzDqa8mydjlnCaiCUehpMrVhMuPi7jDW7lI1A1NtBA=
+github.com/finkf/pcwgo/database/user v0.0.0-20181109092413-d7f3ed06f2d4/go.mod h1:S1Y60dvmdK7tMOoiZUehPodkk9iwwQIJ0Fy7+HEsa24=
 github.com/finkf/pcwgo/database/user v0.0.0-20181109092506-5e70bf8433f7 h1:uBOYsZI/KvQEsSHfsfd28NYE3Mprktgv5ANSuu2hfEE=
 github.com/finkf/pcwgo/database/user v0.0.0-20181109092506-5e70bf8433f7/go.mod h1:S1Y60dvmdK7tMOoiZUehPodkk9iwwQIJ0Fy7+HEsa24=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
