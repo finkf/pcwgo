@@ -89,11 +89,15 @@ func (c Client) PostZIP(zip io.Reader) (Book, error) {
 	return book, err
 }
 
-func (c Client) PostBook(book Book) error {
+// PostBook updates the given Book and returns it.
+func (c Client) PostBook(book Book) (Book, error) {
 	url := c.url(bookPath(book.ProjectID), Auth, c.Session.Auth)
-	return c.post(url, book, nil)
+	var newBook Book
+	err := c.post(url, book, &newBook)
+	return newBook, err
 }
 
+// GetPage returns a
 func (c Client) GetPage(bookID, pageID int) (Page, error) {
 	var page Page
 	url := c.url(pagePath(bookID, pageID), Auth, c.Session.Auth)
