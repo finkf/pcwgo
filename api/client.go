@@ -22,6 +22,15 @@ type Client struct {
 	Session session.Session
 }
 
+// Authenticate creates a new Client from a given auth-token.
+func Authenticate(host, authToken string) *Client {
+	return &Client{
+		Host:    host,
+		Session: session.Session{Auth: authToken},
+		client:  &http.Client{},
+	}
+}
+
 // Login creates a new Client and authenticates with the given
 // username and password.
 func Login(host, email, password string) (*Client, error) {
