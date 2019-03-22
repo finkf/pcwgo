@@ -22,6 +22,8 @@ type Client struct {
 	Session session.Session
 }
 
+// Login creates a new Client and authenticates with the given
+// username and password.
 func Login(host, email, password string) (*Client, error) {
 	// tr := &http.Transport{
 	// 	TLSClientConfig: &tls.Config{InsecureSkipVerify: skipVerify},
@@ -50,18 +52,21 @@ func (c Client) getLogin() (session.Session, error) {
 	return s, err
 }
 
+// GetUsers returns the list of users.
 func (c Client) GetUsers() ([]user.User, error) {
 	var res []user.User
 	err := c.get(c.url("/users", Auth, c.Session.Auth), &res)
 	return res, err
 }
 
+// GetUser returns the user with the given id.
 func (c Client) GetUser(id int64) (user.User, error) {
 	var res user.User
 	err := c.get(c.url(userPath(id), Auth, c.Session.Auth), &res)
 	return res, err
 }
 
+// PutUser updates the settings for a user and returns it.
 func (c Client) PutUser(u CreateUserRequest) (user.User, error) {
 	var res user.User
 	url := c.url(userPath(u.User.ID), Auth, c.Session.Auth)
@@ -69,6 +74,7 @@ func (c Client) PutUser(u CreateUserRequest) (user.User, error) {
 	return res, err
 }
 
+// PostUser creates a new User and returns it.
 func (c Client) PostUser(u CreateUserRequest) (user.User, error) {
 	var res user.User
 	url := c.url("/users", Auth, c.Session.Auth)
@@ -76,12 +82,14 @@ func (c Client) PostUser(u CreateUserRequest) (user.User, error) {
 	return res, err
 }
 
+// GetAPIVersion returns the API version of the pocoweb server.
 func (c Client) GetAPIVersion() (Version, error) {
 	var res Version
 	err := c.get(c.url("/api-version"), &res)
 	return res, err
 }
 
+// PostZIP uploads a zipped OCR project and returns the new project.
 func (c Client) PostZIP(zip io.Reader) (Book, error) {
 	var book Book
 	url := c.url("/books", Auth, c.Session.Auth)
@@ -97,7 +105,7 @@ func (c Client) PostBook(book Book) (Book, error) {
 	return newBook, err
 }
 
-// GetPage returns a
+// GetPage returns the page with the given ids.
 func (c Client) GetPage(bookID, pageID int) (Page, error) {
 	var page Page
 	url := c.url(pagePath(bookID, pageID), Auth, c.Session.Auth)
@@ -105,6 +113,7 @@ func (c Client) GetPage(bookID, pageID int) (Page, error) {
 	return page, err
 }
 
+// PostProfile sends a request to profile the book with the given id.
 func (c Client) PostProfile(bookID int) error {
 	url := c.url(bookPath(bookID)+"/profile", Auth, c.Session.Auth)
 	return c.post(url, nil, nil)
