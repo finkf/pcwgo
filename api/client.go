@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/finkf/pcwgo/database/session"
-	"github.com/finkf/pcwgo/database/user"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -19,14 +18,14 @@ import (
 type Client struct {
 	client  *http.Client
 	Host    string
-	Session session.Session
+	Session Session
 }
 
 // Authenticate creates a new Client from a given auth-token.
 func Authenticate(host, authToken string) *Client {
 	return &Client{
 		Host:    host,
-		Session: session.Session{Auth: authToken},
+		Session: Session{Auth: authToken},
 		client:  &http.Client{},
 	}
 }
@@ -51,41 +50,41 @@ func Login(host, email, password string) (*Client, error) {
 		return nil, err
 	}
 	log.Debugf("session: %s", s)
-	c.Session = s
+	c.Session = Session(s)
 	return c, nil
 }
 
-func (c Client) getLogin() (session.Session, error) {
-	var s session.Session
+func (c Client) getLogin() (Session, error) {
+	var s Session
 	err := c.get(c.url("/login", Auth, c.Session.Auth), &s)
 	return s, err
 }
 
-// GetUsers returns the list of users.
-func (c Client) GetUsers() ([]user.User, error) {
-	var res []user.User
+// GetUsers returns all users (needs admin rights).
+func (c Client) GetUsers() (Users, error) {
+	var res Users
 	err := c.get(c.url("/users", Auth, c.Session.Auth), &res)
 	return res, err
 }
 
 // GetUser returns the user with the given id.
-func (c Client) GetUser(id int64) (user.User, error) {
-	var res user.User
+func (c Client) GetUser(id int64) (User, error) {
+	var res User
 	err := c.get(c.url(userPath(id), Auth, c.Session.Auth), &res)
 	return res, err
 }
 
 // PutUser updates the settings for a user and returns it.
-func (c Client) PutUser(u CreateUserRequest) (user.User, error) {
-	var res user.User
+func (c Client) PutUser(u CreateUserRequest) (User, error) {
+	var res User
 	url := c.url(userPath(u.User.ID), Auth, c.Session.Auth)
 	err := c.put(url, u, &res)
 	return res, err
 }
 
 // PostUser creates a new User and returns it.
-func (c Client) PostUser(u CreateUserRequest) (user.User, error) {
-	var res user.User
+func (c Client) PostUser(u CreateUserRequest) (User, error) {
+	var res User
 	url := c.url("/users", Auth, c.Session.Auth)
 	err := c.post(url, u, &res)
 	return res, err
@@ -99,33 +98,99 @@ func (c Client) GetAPIVersion() (Version, error) {
 }
 
 // PostZIP uploads a zipped OCR project and returns the new project.
-func (c Client) PostZIP(zip io.Reader) (Book, error) {
+func (c Client) PostZIP(zip io.Reader) (*Book, error) {
 	var book Book
 	url := c.url("/books", Auth, c.Session.Auth)
 	err := c.doPost(url, "application/zip", zip, &book)
-	return book, err
+	return &book, err
 }
 
 // PostBook updates the given Book and returns it.
-func (c Client) PostBook(book Book) (Book, error) {
+func (c Client) PostBook(book Book) (*Book, error) {
 	url := c.url(bookPath(book.ProjectID), Auth, c.Session.Auth)
 	var newBook Book
 	err := c.post(url, book, &newBook)
-	return newBook, err
+	return &newBook, err
+}
+
+// GetBook returns the book with the given id.
+func (c Client) GetBook(bookID int) (*Book, error) {
+	url := c.url(bookPath(bookID), Auth, c.Session.Auth)
+	var book Book
+	err := c.get(url, &book)
+	return &book, err
+}
+
+// GetBooks() returns all books of a user.
+func (c Client) GetBooks() (*Books, error) {
+	url := c.url("/books", Auth, c.Session.Auth)
+	var books Books
+	err := c.get(url, &books)
+	return &books, err
 }
 
 // GetPage returns the page with the given ids.
-func (c Client) GetPage(bookID, pageID int) (Page, error) {
+func (c Client) GetPage(bookID, pageID int) (*Page, error) {
 	var page Page
 	url := c.url(pagePath(bookID, pageID), Auth, c.Session.Auth)
 	err := c.get(url, &page)
-	return page, err
+	return &page, err
+}
+
+// GetLine returns the line with the given ids.
+func (c Client) GetLine(bookID, pageID, lineID int) (*Line, error) {
+	var line Line
+	url := c.url(linePath(bookID, pageID, lineID), Auth, c.Session.Auth)
+	err := c.get(url, &line)
+	return &line, err
+}
+
+// PostLine posts content to the given line.
+func (c Client) PostLine(bookID, pageID, lineID int, cor CorrectLineRequest) (*Line, error) {
+	var line Line
+	url := c.url(linePath(bookID, pageID, lineID), Auth, c.Session.Auth)
+	err := c.post(url, cor, &line)
+	return &line, err
+}
+
+// GetWords returns the tokens for the given line.
+func (c Client) GetWords(bookID, pageID, lineID int) (Tokens, error) {
+	var tokens Tokens
+	url := c.url(linePath(bookID, pageID, lineID)+"/tokens", Auth, c.Session.Auth)
+	err := c.get(url, &tokens)
+	return tokens, err
+}
+
+// Search searches for tokens or error patterns.
+func (c Client) Search(bookID int, query string, errorPattern bool) (*SearchResults, error) {
+	p := "0"
+	if errorPattern {
+		p = "1"
+	}
+	url := c.url(bookPath(bookID)+"/search", "q", query, "p", p, Auth, c.Session.Auth)
+	var res SearchResults
+	err := c.get(url, &res)
+	return &res, err
 }
 
 // PostProfile sends a request to profile the book with the given id.
 func (c Client) PostProfile(bookID int) error {
 	url := c.url(bookPath(bookID)+"/profile", Auth, c.Session.Auth)
 	return c.post(url, nil, nil)
+}
+
+// Raw sends a get request to the given path and writes the raw
+// response content into the given writer.
+func (c Client) Raw(path string, out io.Writer) error {
+	url := c.url(path, Auth, c.Session.Auth)
+	log.Debugf("GET %s", url)
+	res, err := c.client.Get(url)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	_, err = io.Copy(out, res.Body)
+	return err
 }
 
 func (c Client) url(path string, keyvals ...string) string {
@@ -152,7 +217,11 @@ func bookPath(id int) string {
 }
 
 func pagePath(id, pageid int) string {
-	return formatID("/books/%d/pages", id, pageid)
+	return formatID("/books/%d/pages/%d", id, pageid)
+}
+
+func linePath(id, pageid, lineid int) string {
+	return formatID("/books/%d/pages/%d/lines/%d", id, pageid, lineid)
 }
 
 func formatID(url string, args ...interface{}) string {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/finkf/pcwgo/database/session"
 	"github.com/finkf/pcwgo/database/user"
 )
 
@@ -26,8 +27,8 @@ func (l LoginRequest) String() string {
 
 // CreateUserRequest defines the data to create new users.
 type CreateUserRequest struct {
-	User     user.User `json:"user"`
-	Password string    `json:"password"`
+	User     User   `json:"user"`
+	Password string `json:"password"`
 }
 
 // ErrorResponse defines the data of error responses
@@ -42,9 +43,27 @@ type Version struct {
 	Version string `json:"version"`
 }
 
+// CorrectLineRequest defines the post data for a line correction.
+type CorrectLineRequest struct {
+	Correction string `json:"correction"`
+}
+
+// Session is just a convinient typedef for session.Session
+type Session session.Session
+
+// User is just a convinient typedef for user.User
+type User user.User
+
 // Users defines the repsonse data for requests to list the system's users.
 type Users struct {
-	Users []user.User `json:"users"`
+	Users []User `json:"users"`
+}
+
+// BookWithPages is a Book with an additional field that holds all the
+// book's pages.
+type BookWithPages struct {
+	Book
+	PageContent []Page
 }
 
 // Book defines the response data for books.
@@ -92,6 +111,29 @@ type Line struct {
 	Box                  Box       `json:"box"`
 }
 
+// Token defines a token on a line.
+type Token struct {
+	Cor                  string    `json:"cor"`
+	OCR                  string    `json:"ocr"`
+	TokenID              int       `json:"tokenId"`
+	LineID               int       `json:"lineId"`
+	PageID               int       `json:"pageId"`
+	ProjectID            int       `json:"projectId"`
+	Offset               int       `json:"offset"`
+	Cuts                 []int     `json:"cuts"`
+	Confidences          []float64 `json:"confidences"`
+	AverageConfidence    float64   `json:"averageConfidence"`
+	IsFullyCorrected     bool      `json:"isFullyCorrected"`
+	IsPartiallyCorrected bool      `json:"isPartiallyCorrected"`
+	IsNormal             bool      `json:"isNormal"`
+	Box                  Box       `json:"box"`
+}
+
+// Tokens defines the tokens on a line.
+type Tokens struct {
+	Tokens []Token `json:"tokens"`
+}
+
 // Box defines the bounding box in an image.
 type Box struct {
 	Left   int `json:"left"`
@@ -100,6 +142,21 @@ type Box struct {
 	Bottom int `json:"bottom"`
 	Width  int `json:"width"`
 	Height int `json:"heigth"`
+}
+
+// SearchResults defines the results for token searches.
+type SearchResults struct {
+	ProejctID      int     `json:"projectId"`
+	NLines         int     `json:"nLines"`
+	Matches        []Match `json:"matches"`
+	Query          string  `json:"query"`
+	IsErrorPattern bool    `json:"isErrorPattern"`
+}
+
+// Match defines the matches in the results of searches.
+type Match struct {
+	Line   Line    `json:"line"`
+	Tokens []Token `json:"tokens"`
 }
 
 // NewErrorResponse creates a new ErrorResponse with
