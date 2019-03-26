@@ -1,7 +1,5 @@
 package db
 
-import "fmt"
-
 const PagesTableName = "pages"
 
 const pagesTable = PagesTableName + "(" +
@@ -21,10 +19,10 @@ type Page struct {
 	Left, Right, Top, Bottom int
 }
 
+// CreateTablePages creates the databases table pages if it does not
+// already exist.  This function will fail if the table books does not
+// exist.
 func CreateTablePages(db DB) error {
-	if err := CreateTableBooks(db); err != nil {
-		return fmt.Errorf("cannot create table books: %v", err)
-	}
 	_, err := Exec(db, "CREATE TABLE IF NOT EXISTS "+pagesTable)
 	return err
 }

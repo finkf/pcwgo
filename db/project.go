@@ -25,13 +25,34 @@ func (p Project) String() string {
 	return fmt.Sprintf("%d/%d/%d %s", p.ID, p.Origin, p.Pages, p.Owner)
 }
 
-// CreateTableProjects creates the project table.
+// CreateTableProjects creates the project table if it does not
+// already exist.  This function will fail, if the users table does
+// not already exist.
 func CreateTableProjects(db DB) error {
-	if err := CreateTableUsers(db); err != nil {
-		return fmt.Errorf("cannot create table users: %v", err)
-	}
 	_, err := Exec(db, "CREATE TABLE IF NOT EXISTS "+projectsTable)
 	return err
+}
+
+// CreateAllTables creates all tables in the right order. The order
+// is: users -> projects -> books -> pages -> lines.
+func CreateAllTables(db DB) error {
+	if err := CreateTableUsers(db); err != nil {
+		return fmt.Errorf("cannot create table %s: %v", UsersTableName, err)
+	}
+	if err := CreateTableProjects(db); err != nil {
+		return fmt.Errorf("cannot create table %s: %v", ProjectsTableName, err)
+	}
+	if err := CreateTableBooks(db); err != nil {
+		return fmt.Errorf("cannot create table %s: %v", BooksTableName, err)
+	}
+	if err := CreateTablePages(db); err != nil {
+		return fmt.Errorf("cannot create table %s: %v", PagesTableName, err)
+	}
+	if err := CreateTableLines(db); err != nil {
+		return fmt.Errorf("cannot create tables %s,%s: %v",
+			TextLinesTableName, ContentsTableName, err)
+	}
+	return nil
 }
 
 func NewProject(db DB, p *Project) error {

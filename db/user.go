@@ -48,7 +48,8 @@ func (u User) String() string {
 	return fmt.Sprintf("%s/%d%s [%s,%s]", u.Email, u.ID, adm, u.Name, u.Institute)
 }
 
-// CreateTableUsers creates the users table.
+// CreateTableUsers creates the users table if it does not already
+// exist.
 func CreateTableUsers(db DB) error {
 	_, err := Exec(db, "CREATE TABLE IF NOT EXISTS "+usersTable)
 	return err

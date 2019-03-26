@@ -1,7 +1,5 @@
 package db
 
-import "fmt"
-
 const BooksTableName = "books"
 
 const booksTable = BooksTableName + "(" +
@@ -23,10 +21,10 @@ type Book struct {
 	URI, ProfilerURL, Directory, Lang string
 }
 
+// CreateTableBooks the database table books if it does not already
+// exist.  This function will fail, if the projects table does not
+// exist.
 func CreateTableBooks(db DB) error {
-	if err := CreateTableProjects(db); err != nil {
-		return fmt.Errorf("cannot create table projects: %v", err)
-	}
 	_, err := Exec(db, "CREATE TABLE IF NOT EXISTS "+booksTable)
 	return err
 }

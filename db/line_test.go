@@ -11,7 +11,7 @@ import (
 )
 
 func newTestLine(t *testing.T, db DB, id int) *Line {
-	if err := CreateTableTextLines(db); err != nil {
+	if err := CreateAllTables(db); err != nil {
 		t.Fatalf("got error: %v", err)
 	}
 	page := newTestPage(t, db, id)
@@ -61,14 +61,14 @@ func TestFindLineByID(t *testing.T) {
 		}
 		for _, tc := range tests {
 			t.Run(fmt.Sprintf("line_%d", tc.test.LineID), func(t *testing.T) {
-				got, found, err := FindLineByID(db, tc.test.BookID, tc.test.PageID, tc.test.LineID)
+				got, found, err := FindLineByID(db, tc.test.BookID, tc.test.PageID, tc.id)
 				if err != nil {
 					t.Fatalf("got error: %v", err)
 				}
 				if found != tc.find {
 					t.Fatalf("expected find=%t; got %t", tc.find, found)
 				}
-				if !reflect.DeepEqual(*got, *tc.test) {
+				if tc.find && !reflect.DeepEqual(*got, *tc.test) {
 					t.Fatalf("expected line=%v; got %v", *tc.test, *got)
 				}
 			})
@@ -76,34 +76,3 @@ func TestFindLineByID(t *testing.T) {
 	})
 	log.SetLevel(log.DebugLevel)
 }
-
-// 	withLineDB(func(db *sql.DB) {
-// 		tests := []struct {
-// 			ocr, cor      string
-// 			bid, pid, lid int
-// 		}{
-// 			{"abc", "ABC", 1, 4, 1},
-// 		}
-// 		for _, tc := range tests {
-// 			t.Run(fmt.Sprintf("%d-%d-%d", tc.bid, tc.pid, tc.lid), func(t *testing.T) {
-// 				line := newLine(tc.bid, tc.pid, tc.lid, tc.cor, tc.ocr)
-// 				if err := Insert(db, line); err != nil {
-// 					t.Fatalf("got error: %v", err)
-// 				}
-// 				got, ok, err := FindByID(db, tc.bid, tc.pid, tc.lid)
-// 				if err != nil {
-// 					t.Fatalf("got error: %v", err)
-// 				}
-// 				if !ok {
-// 					t.Fatalf("cannot find line")
-// 				}
-// 				if tc.cor != got.Cor() {
-// 					t.Fatalf("expected cor = %s; got cor = %s", tc.cor, got.Cor())
-// 				}
-// 				if tc.ocr != got.OCR() {
-// 					t.Fatalf("expected ocr = %s; got ocr = %s", tc.ocr, got.OCR())
-// 				}
-// 			})
-// 		}
-// 	})
-// }

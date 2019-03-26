@@ -2,7 +2,6 @@ package db
 
 import (
 	"database/sql"
-	"fmt"
 	"strings"
 )
 
@@ -95,39 +94,15 @@ func (l Line) OCR() string {
 	return b.String()
 }
 
-// CreateTableTextLines creates the textlines table (and all its
-// directly dependent tables).  It does not matter if
-// CreateTableTextLines or CreateTableContents is used to create the
-// tables for the storage of page lines.
-func CreateTableTextLines(db DB) error {
-	if err := CreateTablePages(db); err != nil {
-		return fmt.Errorf("cannot create table pages: %v", err)
-	}
-	if err := CreateTableBooks(db); err != nil {
-		return fmt.Errorf("cannot create table pages: %v", err)
-	}
-	if err := CreateTableContents(db); err != nil {
-		return fmt.Errorf("cannot create table textlines: %v", err)
-	}
+// CreateTableLines creates the two tables needed for the storing of
+// text lines in the right order.  The creation will fail, if the
+// books and pages tables do not yet exist.
+func CreateTableLines(db DB) error {
 	_, err := Exec(db, "CREATE TABLE IF NOT EXISTS "+tableTextLines)
-	return err
-}
-
-// CreateTableContents creates the contents table (and all its
-// directly dependent tables).  It does not matter if
-// CreateTableTextLines or CreateTableContents is used to create the
-// tables for the storage of page lines.
-func CreateTableContents(db DB) error {
-	if err := CreateTablePages(db); err != nil {
-		return fmt.Errorf("cannot create table pages: %v", err)
+	if err != nil {
+		return err
 	}
-	if err := CreateTableBooks(db); err != nil {
-		return fmt.Errorf("cannot create table pages: %v", err)
-	}
-	if err := CreateTableTextLines(db); err != nil {
-		return fmt.Errorf("cannot create table textlines: %v", err)
-	}
-	_, err := Exec(db, "CREATE TABLE IF NOT EXISTS "+tableContents)
+	_, err = Exec(db, "CREATE TABLE IF NOT EXISTS "+tableContents)
 	return err
 }
 
