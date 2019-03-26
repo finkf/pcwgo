@@ -21,20 +21,21 @@ func withTableSessions(f func(*sql.DB)) {
 
 func TestInsertSession(t *testing.T) {
 	withTableSessions(func(db *sql.DB) {
-		u, err := InsertUser(db, User{
+		user := User{
 			Name:      "test",
 			Email:     "test@example.com",
 			Institute: "test institute",
-		})
+		}
+		err := InsertUser(db, &user)
 		if err != nil {
 			t.Fatalf("got error: %v", err)
 		}
-		s, err := InsertSession(db, u)
+		s, err := InsertSession(db, user)
 		if err != nil {
 			t.Fatalf("got error: %v", err)
 		}
-		if s.User != u {
-			t.Fatalf("expected %v; got %v", u, s.User)
+		if s.User != user {
+			t.Fatalf("expected %v; got %v", user, s.User)
 		}
 		if len(s.Auth) != IDLength {
 			t.Fatalf("invalid session Auth: %s", s.Auth)
@@ -49,7 +50,7 @@ func TestInsertSession(t *testing.T) {
 		if got != s {
 			t.Fatalf("expected %v; got %v", s, got)
 		}
-		if err := DeleteSessionByUserID(db, u.ID); err != nil {
+		if err := DeleteSessionByUserID(db, user.ID); err != nil {
 			t.Fatalf("got error: %v", err)
 		}
 	})

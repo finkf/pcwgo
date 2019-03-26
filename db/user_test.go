@@ -18,11 +18,11 @@ func newTestUser(t *testing.T, db DB, id int) User {
 		Institute: fmt.Sprintf("user_institute_%d", id),
 		Admin:     (id % 2) != 0, // odd ids are admins
 	}
-	u, err := InsertUser(db, user)
+	err := InsertUser(db, &user)
 	if err != nil {
 		t.Fatalf("got error: %v", err)
 	}
-	return u
+	return user
 }
 
 func withTableUsers(t *testing.T, f func(*sql.DB)) {
@@ -37,7 +37,7 @@ func withTableUsers(t *testing.T, f func(*sql.DB)) {
 func withTestUser(t *testing.T, u *User, f func(*sql.DB)) {
 	withTableUsers(t, func(db *sql.DB) {
 		var err error
-		*u, err = InsertUser(db, *u)
+		err = InsertUser(db, u)
 		if err != nil {
 			t.Fatalf("got error: %v", err)
 		}
@@ -48,7 +48,8 @@ func withTestUser(t *testing.T, u *User, f func(*sql.DB)) {
 func TestInsertUser(t *testing.T) {
 	withTableUsers(t, func(db *sql.DB) {
 		want := User{Name: "test", Email: "test@example.com"}
-		got, err := InsertUser(db, want)
+		got := want
+		err := InsertUser(db, &got)
 		if err != nil {
 			t.Fatalf("cannot create user: %v", err)
 		}

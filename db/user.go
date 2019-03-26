@@ -55,18 +55,18 @@ func CreateTableUsers(db DB) error {
 	return err
 }
 
-func InsertUser(db DB, user User) (User, error) {
+func InsertUser(db DB, user *User) error {
 	const stmt = "INSERT INTO " + UsersTableName + "(Name,Email,Institute,Admin) values(?,?,?,?)"
 	res, err := Exec(db, stmt, user.Name, user.Email, user.Institute, user.Admin)
 	if err != nil {
-		return User{}, err
+		return err
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
-		return User{}, err
+		return err
 	}
 	user.ID = id
-	return user, nil
+	return nil
 }
 
 func SetUserPassword(db DB, user User, password string) error {

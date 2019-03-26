@@ -32,11 +32,11 @@ func newTestProject(t *testing.T, db DB, id int) *Project {
 }
 
 func mustNewUser(db *sql.DB, u User) User {
-	nu, err := InsertUser(db, u)
+	err := InsertUser(db, &u)
 	if err != nil {
 		panic(err)
 	}
-	return nu
+	return u
 }
 
 func mustNewProject(db *sql.DB, p Project) *Project {
