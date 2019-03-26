@@ -1,4 +1,4 @@
-package user
+package db
 
 import (
 	"crypto/rand"
@@ -8,7 +8,6 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/finkf/pcwgo/database"
 	"golang.org/x/crypto/scrypt"
 )
 
@@ -20,10 +19,10 @@ const (
 )
 
 // Name of the table
-const Name = "users"
+const UsersTableName = "users"
 
-var table = "" +
-	Name + "(" +
+var usersTable = "" +
+	UsersTableName + "(" +
 	"ID INTEGER NOT NULL PRIMARY KEY /*!40101 AUTO_INCREMENT */," +
 	"Name VARCHAR(255) NOT NULL," +
 	"Institute VARCHAR(255) NOT NULL," +
@@ -49,39 +48,40 @@ func (u User) String() string {
 	return fmt.Sprintf("%s/%d%s [%s,%s]", u.Email, u.ID, adm, u.Name, u.Institute)
 }
 
-// CreateTable creates the users table.
-func CreateTable(db database.DB) error {
-	_, err := database.Exec(db, "CREATE TABLE IF NOT EXISTS "+table)
+// CreateTableUsers creates the users table if it does not already
+// exist.
+func CreateTableUsers(db DB) error {
+	_, err := Exec(db, "CREATE TABLE IF NOT EXISTS "+usersTable)
 	return err
 }
 
-func New(db database.DB, user User) (User, error) {
-	const stmt = "INSERT INTO " + Name + "(Name,Email,Institute,Admin) values(?,?,?,?)"
-	res, err := database.Exec(db, stmt, user.Name, user.Email, user.Institute, user.Admin)
+func InsertUser(db DB, user *User) error {
+	const stmt = "INSERT INTO " + UsersTableName + "(Name,Email,Institute,Admin) values(?,?,?,?)"
+	res, err := Exec(db, stmt, user.Name, user.Email, user.Institute, user.Admin)
 	if err != nil {
-		return User{}, err
+		return err
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
-		return User{}, err
+		return err
 	}
 	user.ID = id
-	return user, nil
+	return nil
 }
 
-func SetUserPassword(db database.DB, user User, password string) error {
+func SetUserPassword(db DB, user User, password string) error {
 	hash, salt, err := genSaltAndHash(password)
 	if err != nil {
 		return err
 	}
-	const stmt = "UPDATE " + Name + " SET Hash=?,Salt=? WHERE ID=?;"
-	_, err = database.Exec(db, stmt, hash, salt, user.ID)
+	const stmt = "UPDATE " + UsersTableName + " SET Hash=?,Salt=? WHERE ID=?;"
+	_, err = Exec(db, stmt, hash, salt, user.ID)
 	return err
 }
 
-func AuthenticateUser(db database.DB, user User, password string) error {
-	const stmt = "SELECT Hash,Salt FROM " + Name + " WHERE ID=?"
-	rows, err := database.Query(db, stmt, user.ID)
+func AuthenticateUser(db DB, user User, password string) error {
+	const stmt = "SELECT Hash,Salt FROM " + UsersTableName + " WHERE ID=?"
+	rows, err := Query(db, stmt, user.ID)
 	if err != nil {
 		return err
 	}
@@ -107,32 +107,32 @@ func AuthenticateUser(db database.DB, user User, password string) error {
 	return nil
 }
 
-func UpdateUser(db database.DB, user User) error {
-	const stmt = "UPDATE " + Name + " SET Name=?,Email=?,Institute=? WHERE ID=?"
-	_, err := database.Exec(db, stmt, user.Name, user.Email, user.Institute, user.ID)
+func UpdateUser(db DB, user User) error {
+	const stmt = "UPDATE " + UsersTableName + " SET Name=?,Email=?,Institute=? WHERE ID=?"
+	_, err := Exec(db, stmt, user.Name, user.Email, user.Institute, user.ID)
 	return err
 }
 
-func DeleteUserByID(db database.DB, id int64) error {
-	const stmt = "DELETE FROM " + Name + " WHERE ID=?"
-	_, err := database.Exec(db, stmt, id)
+func DeleteUserByID(db DB, id int64) error {
+	const stmt = "DELETE FROM " + UsersTableName + " WHERE ID=?"
+	_, err := Exec(db, stmt, id)
 	return err
 }
 
-func FindByID(db database.DB, id int64) (User, bool, error) {
-	const stmt = "SELECT ID,Name,Email,Institute,Admin FROM " + Name + " WHERE ID=?"
+func FindUserByID(db DB, id int64) (User, bool, error) {
+	const stmt = "SELECT ID,Name,Email,Institute,Admin FROM " + UsersTableName + " WHERE ID=?"
 	return selectUser(db, stmt, id)
 }
 
-func FindByEmail(db database.DB, email string) (User, bool, error) {
-	const stmt = "SELECT ID,Name,Email,Institute,Admin FROM " + Name + " WHERE Email=?"
+func FindUserByEmail(db DB, email string) (User, bool, error) {
+	const stmt = "SELECT ID,Name,Email,Institute,Admin FROM " + UsersTableName + " WHERE Email=?"
 	return selectUser(db, stmt, email)
 }
 
 // All returns all users in the database.
-func All(db database.DB) ([]User, error) {
-	const stmt = "SELECT ID,Name,Email,Institute,Admin FROM " + Name
-	rows, err := database.Query(db, stmt)
+func All(db DB) ([]User, error) {
+	const stmt = "SELECT ID,Name,Email,Institute,Admin FROM " + UsersTableName
+	rows, err := Query(db, stmt)
 	if err != nil {
 		return nil, err
 	}
@@ -148,8 +148,8 @@ func All(db database.DB) ([]User, error) {
 	return users, nil
 }
 
-func selectUser(db database.DB, q string, args ...interface{}) (User, bool, error) {
-	rows, err := database.Query(db, q, args...)
+func selectUser(db DB, q string, args ...interface{}) (User, bool, error) {
+	rows, err := Query(db, q, args...)
 	if err != nil {
 		return User{}, false, err
 	}

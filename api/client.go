@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/finkf/pcwgo/database/session"
+	"github.com/finkf/pcwgo/db"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -44,7 +44,7 @@ func Login(host, email, password string) (*Client, error) {
 		Email:    email,
 		Password: password,
 	}
-	var s session.Session
+	var s db.Session
 	err := c.post(c.url("/login"), login, &s)
 	if err != nil {
 		return nil, err

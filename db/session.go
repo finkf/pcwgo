@@ -1,4 +1,4 @@
-package session
+package db
 
 import (
 	"crypto/rand"
@@ -6,9 +6,6 @@ import (
 	"math/big"
 	"strconv"
 	"time"
-
-	"github.com/finkf/pcwgo/database"
-	"github.com/finkf/pcwgo/database/user"
 )
 
 const (
@@ -19,19 +16,19 @@ const (
 )
 
 // Name defines the name of the sessions table.
-const Name = "sessions"
+const SessionsTableName = "sessions"
 
-var table = "" +
-	Name + " (" +
+var sessionsTable = "" +
+	SessionsTableName + " (" +
 	"Auth char(" + strconv.Itoa(IDLength) + ") NOT NULL UNIQUE," +
-	"UserID INTEGER NOT NULL REFERENCES " + user.Name + "(ID)," +
+	"UserID INTEGER NOT NULL REFERENCES " + UsersTableName + "(ID)," +
 	"Expires INTEGER NOT NULL" +
 	")"
 
 type Session struct {
-	User    user.User `json:"user"`
-	Auth    string    `json:"auth"`
-	Expires int64     `json:"expires"`
+	User    User   `json:"user"`
+	Auth    string `json:"auth"`
+	Expires int64  `json:"expires"`
 }
 
 func (s Session) Expired() bool {
@@ -47,30 +44,30 @@ func (s Session) String() string {
 }
 
 // CreateTable creates the sessions table.
-func CreateTable(db database.DB) error {
-	stmt := "CREATE TABLE IF NOT EXISTS " + table + ";"
-	_, err := database.Exec(db, stmt)
+func CreateTableSessions(db DB) error {
+	stmt := "CREATE TABLE IF NOT EXISTS " + sessionsTable + ";"
+	_, err := Exec(db, stmt)
 	return err
 }
 
-// New creates a new unique session for the given user in the database
+// Insert creates a new unique session for the given user in the database
 // and returns the new session.
-func New(db database.DB, u user.User) (Session, error) {
+func InsertSession(db DB, u User) (Session, error) {
 	auth, err := genAuth()
 	if err != nil {
 		return Session{}, err
 	}
 	expires := time.Now().Add(Expires).Unix()
 	// Insert new session for the user.
-	const stmt2 = "INSERT INTO " + Name + "(Auth,UserID,Expires)values(?,?,?)"
-	_, err = database.Exec(db, stmt2, auth, u.ID, expires)
+	const stmt2 = "INSERT INTO " + SessionsTableName + "(Auth,UserID,Expires)values(?,?,?)"
+	_, err = Exec(db, stmt2, auth, u.ID, expires)
 	if err != nil {
 		return Session{}, err
 	}
 	return Session{Auth: auth, User: u, Expires: expires}, nil
 }
 
-func FindByID(db database.DB, id string) (Session, bool, error) {
+func FindSessionByID(db DB, id string) (Session, bool, error) {
 	s, found, err := selectSession(db, id)
 	if !found || err != nil {
 		return s, found, err
@@ -78,17 +75,18 @@ func FindByID(db database.DB, id string) (Session, bool, error) {
 	return s, found, err
 }
 
-func DeleteByUserID(db database.DB, id int64) error {
-	const stmt = "DELETE FROM " + Name + " WHERE UserID=?"
-	_, err := database.Exec(db, stmt, id)
+func DeleteSessionByUserID(db DB, id int64) error {
+	const stmt = "DELETE FROM " + SessionsTableName + " WHERE UserID=?"
+	_, err := Exec(db, stmt, id)
 	return err
 }
 
-func selectSession(db database.DB, id string) (Session, bool, error) {
+func selectSession(db DB, id string) (Session, bool, error) {
 	const stmt = "" +
 		"SELECT s.Auth,s.Expires,u.ID,u.Name,u.Email,u.Institute,u.Admin " +
-		"FROM " + Name + " s JOIN " + user.Name + " u ON s.UserID=u.ID WHERE s.Auth=?"
-	rows, err := database.Query(db, stmt, id)
+		"FROM " + SessionsTableName + " s JOIN " +
+		UsersTableName + " u ON s.UserID=u.ID WHERE s.Auth=?"
+	rows, err := Query(db, stmt, id)
 	if err != nil {
 		return Session{}, false, err
 	}

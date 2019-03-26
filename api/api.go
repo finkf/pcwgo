@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/finkf/pcwgo/database/session"
-	"github.com/finkf/pcwgo/database/user"
+	"github.com/finkf/pcwgo/db"
 )
 
 const (
@@ -49,10 +48,10 @@ type CorrectLineRequest struct {
 }
 
 // Session is just a convinient typedef for session.Session
-type Session session.Session
+type Session db.Session
 
 // User is just a convinient typedef for user.User
-type User user.User
+type User db.User
 
 // Users defines the repsonse data for requests to list the system's users.
 type Users struct {
