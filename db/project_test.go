@@ -94,7 +94,7 @@ func TestFindProjectByID(t *testing.T) {
 	})
 }
 
-func TestFindByUser(t *testing.T) {
+func TestFindProjectByUser(t *testing.T) {
 	withProjectDB(func(db *sql.DB) {
 		tests := []struct {
 			u    User
