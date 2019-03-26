@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/finkf/pcwgo/db/sqlite"
-	log "github.com/sirupsen/logrus"
 )
 
 func newTestLine(t *testing.T, db DB, id int) *Line {
@@ -48,7 +47,7 @@ func newChars(id int) []Char {
 }
 
 func TestFindLineByID(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
+	// log.SetLevel(log.DebugLevel)
 	sqlite.With("lines.sqlite", func(db *sql.DB) {
 		tests := []struct {
 			test *Line
@@ -74,5 +73,5 @@ func TestFindLineByID(t *testing.T) {
 			})
 		}
 	})
-	log.SetLevel(log.DebugLevel)
+	// log.SetLevel(log.DebugLevel)
 }
