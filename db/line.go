@@ -155,36 +155,47 @@ func UpdateLine(db DB, line Line) error {
 }
 
 func FindLineByID(db DB, bookID, pageID, lineID int) (*Line, bool, error) {
-	const stmt = "SELECT l.ImagePath,l.LLeft,l.LRight,l.LTop,l.LBottom," +
-		"c.OCR,c.Cor,c.Cut,c.Conf FROM " + TextLinesTableName +
-		" l JOIN " + ContentsTableName + " c " +
-		"ON l.BookID=c.BookID AND l.PageID=c.PageID AND l.LineID=c.LineID " +
-		"WHERE l.BookID=? AND l.PageID=? AND l.LineID=? ORDER BY c.Seq"
-	rows, err := Query(db, stmt, bookID, pageID, lineID)
+	const stmt1 = "SELECT ImagePath,LLeft,LRight,LTop,LBottom FROM " +
+		TextLinesTableName + " WHERE BookID=? AND PageID=? AND LineID=?"
+	const stmt2 = "SELECT OCR,Cor,Cut,Conf FROM " + ContentsTableName +
+		" WHERE BookID=? AND PageID=? AND LineID=? ORDER BY Seq"
+	// query for textlines content
+	rows, err := Query(db, stmt1, bookID, pageID, lineID)
 	if err != nil {
 		return nil, false, err
 	}
 	defer rows.Close()
+	if !rows.Next() {
+		return nil, false, nil
+	}
 	line := Line{
 		BookID: bookID,
 		PageID: pageID,
 		LineID: lineID,
 	}
+	if err := scanLine(rows, &line); err != nil {
+		return nil, false, err
+	}
+
+	// query for contents
+	rows, err = Query(db, stmt2, bookID, pageID, lineID)
 	for rows.Next() {
-		if err := scanLine(rows, &line); err != nil {
+		line.Chars = append(line.Chars, Char{})
+		if err := scanChar(rows, &line.Chars[len(line.Chars)-1]); err != nil {
 			return nil, false, err
 		}
 	}
-	return &line, len(line.Chars) > 0, nil
+	return &line, true, nil
+}
+
+func scanChar(rows *sql.Rows, char *Char) error {
+	return rows.Scan(&char.OCR, &char.Cor, &char.Cut, &char.Conf)
 }
 
 func scanLine(rows *sql.Rows, line *Line) error {
-	var char Char
-	err := rows.Scan(&line.ImagePath, &line.Left, &line.Right, &line.Top, &line.Bottom,
-		&char.OCR, &char.Cor, &char.Cut, &char.Conf)
+	err := rows.Scan(&line.ImagePath, &line.Left, &line.Right, &line.Top, &line.Bottom)
 	if err != nil {
 		return err
 	}
-	line.Chars = append(line.Chars, char)
 	return nil
 }
