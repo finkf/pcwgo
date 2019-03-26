@@ -44,12 +44,12 @@ func Login(host, email, password string) (*Client, error) {
 		Email:    email,
 		Password: password,
 	}
-	var s db.Session
+	var s Session
 	err := c.post(c.url("/login"), login, &s)
 	if err != nil {
 		return nil, err
 	}
-	log.Debugf("session: %s", s)
+	log.Debugf("session: %s", db.Session(s))
 	c.Session = Session(s)
 	return c, nil
 }
