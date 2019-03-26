@@ -2,10 +2,16 @@ github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/finkf/logger v0.3.2/go.mod h1:i+Ddxrn8mKAmDxbJhSl2A69Hr7ZJ44PfFRyxSGLV6TA=
 github.com/finkf/pcwgo/database v0.0.0-20181108095749-32599b07b19e h1:2tVPxHNN6Jgd5BRxdEkpVqyyABsopNaJGhaDTYAxwJw=
 github.com/finkf/pcwgo/database v0.0.0-20181108095749-32599b07b19e/go.mod h1:cwNNqsd0kM3jUgocASOVOV/2tOSxYRxCHm6kVk8Ilc0=
+github.com/finkf/pcwgo/database v0.0.0-20181109092413-d7f3ed06f2d4 h1:sYX59Ww6fyQncrhJfesw/XWVjCY+TWqvgyM9xx88y5I=
+github.com/finkf/pcwgo/database v0.0.0-20181109092413-d7f3ed06f2d4/go.mod h1:OJ4e8mLPCzQgE0Kxm4i3awzthDfztKzCoShhilxKNag=
 github.com/finkf/pcwgo/database v0.0.0-20190324203234-f60ed159f11f h1:fDHPz4XDpHbtF8EDOjRqzgvp6C3nJ4gT8+yCqNsc/ek=
+github.com/finkf/pcwgo/database/session v0.0.0-20190324203234-f60ed159f11f h1:Aiy5N/xX8z705quMZ4bon+U35bZFHAZ0zJehJZx6jSk=
+github.com/finkf/pcwgo/database/session v0.0.0-20190324203234-f60ed159f11f/go.mod h1:04bASyN1ITVZMs3snFQpMijW+lRnJb/huW2Hra3jxFs=
 github.com/finkf/pcwgo/database/sqlite v0.0.0-20181108095749-32599b07b19e/go.mod h1:EGzDqa8mydjlnCaiCUehpMrVhMuPi7jDW7lI1A1NtBA=
+github.com/finkf/pcwgo/database/sqlite v0.0.0-20181109092413-d7f3ed06f2d4/go.mod h1:EGzDqa8mydjlnCaiCUehpMrVhMuPi7jDW7lI1A1NtBA=
 github.com/finkf/pcwgo/database/sqlite v0.0.0-20190324203234-f60ed159f11f h1:B9ECg5rWJMfEoflGIEKV68frOxmwId06xD56XiouBHg=
 github.com/finkf/pcwgo/database/sqlite v0.0.0-20190324203234-f60ed159f11f/go.mod h1:EGzDqa8mydjlnCaiCUehpMrVhMuPi7jDW7lI1A1NtBA=
+github.com/finkf/pcwgo/database/user v0.0.0-20181109092413-d7f3ed06f2d4/go.mod h1:S1Y60dvmdK7tMOoiZUehPodkk9iwwQIJ0Fy7+HEsa24=
 github.com/finkf/pcwgo/database/user v0.0.0-20190324203234-f60ed159f11f h1:Vno4QxlzQTn6ThTKFpAXyhKIjkY/rsWSBWwkVx28aBM=
 github.com/finkf/pcwgo/database/user v0.0.0-20190324203234-f60ed159f11f/go.mod h1:U8E87pDAXABpsCF1a6CEydFOvfnjdMqM+Z8TdagY57g=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
@@ -20,6 +26,7 @@ golang.org/x/crypto v0.0.0-20180904163835-0709b304e793/go.mod h1:6SG95UA2DQfeDnf
 golang.org/x/crypto v0.0.0-20181012144002-a92615f3c490/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
 golang.org/x/crypto v0.0.0-20181106171534-e4dc69e5b2fd h1:VtIkGDhk0ph3t+THbvXHfMZ8QHgsBO39Nh52+74pq7w=
 golang.org/x/crypto v0.0.0-20181106171534-e4dc69e5b2fd/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
+golang.org/x/crypto v0.0.0-20190320223903-b7391e95e576/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c h1:Vj5n4GlwjmQteupaxJ9+0FNOmBrHfq7vN4btdGoDZgI=
 golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/sys v0.0.0-20180905080454-ebe1bf3edb33 h1:I6FyU15t786LL7oL/hn43zqTuEGr4PN7F4XJ1p4E3Y8=

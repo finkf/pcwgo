@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/finkf/pcwgo/database/user"
+	"github.com/finkf/pcwgo/db"
 )
 
 const (
@@ -26,8 +26,8 @@ func (l LoginRequest) String() string {
 
 // CreateUserRequest defines the data to create new users.
 type CreateUserRequest struct {
-	User     user.User `json:"user"`
-	Password string    `json:"password"`
+	User     db.User `json:"user"`
+	Password string  `json:"password"`
 }
 
 // ErrorResponse defines the data of error responses
@@ -44,7 +44,7 @@ type Version struct {
 
 // Users defines the repsonse data for requests to list the system's users.
 type Users struct {
-	Users []user.User `json:"users"`
+	Users []db.User `json:"users"`
 }
 
 // Book defines the response data for books.
