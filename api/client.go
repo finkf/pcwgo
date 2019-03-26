@@ -154,7 +154,7 @@ func (c Client) PostLine(bookID, pageID, lineID int, cor Correction) (*Line, err
 }
 
 // GetTokens returns the tokens for the given line.
-func (c Client) GetWords(bookID, pageID, lineID int) (Tokens, error) {
+func (c Client) GetTokens(bookID, pageID, lineID int) (Tokens, error) {
 	var tokens Tokens
 	url := c.url(linePath(bookID, pageID, lineID)+"/tokens", Auth, c.Session.Auth)
 	err := c.get(url, &tokens)
