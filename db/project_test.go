@@ -98,10 +98,10 @@ func TestFindByUser(t *testing.T) {
 	withProjectDB(func(db *sql.DB) {
 		tests := []struct {
 			u    User
-			want []*Project
+			want []Project
 		}{
-			{u1, []*Project{p1, p2}},
-			{u2, []*Project{p3}},
+			{u1, []Project{*p1, *p2}},
+			{u2, []Project{*p3}},
 			{u3, nil},
 		}
 		for _, tc := range tests {

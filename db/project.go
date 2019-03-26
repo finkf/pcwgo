@@ -82,14 +82,14 @@ func FindProjectByID(db DB, id int64) (*Project, bool, error) {
 	if !rows.Next() {
 		return nil, false, nil
 	}
-	p, err := fromRows(rows)
-	if err != nil {
+	var p Project
+	if err := scanProject(rows, &p); err != nil {
 		return nil, false, err
 	}
-	return p, true, nil
+	return &p, true, nil
 }
 
-func FindProjectByUser(db DB, u User) ([]*Project, error) {
+func FindProjectByUser(db DB, u User) ([]Project, error) {
 	const stmt = "" +
 		"SELECT p.ID,p.Origin,p.Pages,u.ID,u.Name,u.Email,u.Admin " +
 		"FROM " + ProjectsTableName + " p JOIN " + UsersTableName + " u on p.Owner=u.ID " +
@@ -99,21 +99,19 @@ func FindProjectByUser(db DB, u User) ([]*Project, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var ps []*Project
+	var ps []Project
 	for rows.Next() {
-		p, err := fromRows(rows)
-		if err != nil {
+		ps = append(ps, Project{})
+		if err := scanProject(rows, &ps[len(ps)-1]); err != nil {
 			return nil, err
 		}
-		ps = append(ps, p)
 	}
 	return ps, nil
 }
 
-func fromRows(rows *sql.Rows) (*Project, error) {
-	var p Project
+func scanProject(rows *sql.Rows, p *Project) error {
 	if err := rows.Scan(&p.ID, &p.Origin, &p.Pages, &p.Owner.ID, &p.Owner.Name, &p.Owner.Email, &p.Owner.Admin); err != nil {
-		return nil, err
+		return err
 	}
-	return &p, nil
+	return nil
 }
