@@ -47,10 +47,10 @@ type CorrectLineRequest struct {
 	Correction string `json:"correction"`
 }
 
-// Session is just a convinient typedef for session.Session
+// Session is just a convinient typedef for db.Session
 type Session db.Session
 
-// User is just a convinient typedef for user.User
+// User is just a convinient typedef for db.User
 type User db.User
 
 // Users defines the repsonse data for requests to list the system's users.
