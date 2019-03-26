@@ -50,9 +50,9 @@ func CreateTableSessions(db DB) error {
 	return err
 }
 
-// New creates a new unique session for the given user in the database
+// Insert creates a new unique session for the given user in the database
 // and returns the new session.
-func NewSession(db DB, u User) (Session, error) {
+func InsertSession(db DB, u User) (Session, error) {
 	auth, err := genAuth()
 	if err != nil {
 		return Session{}, err

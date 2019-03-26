@@ -29,7 +29,7 @@ func CreateTableBooks(db DB) error {
 	return err
 }
 
-func NewBook(db DB, book *Book) error {
+func InsertBook(db DB, book *Book) error {
 	const stmt = "INSERT INTO " + BooksTableName +
 		"(BookID,Author,Title,Year,Description,URI,ProfilerURL,Directory,Lang)" +
 		"VALUES(?,?,?,?,?,?,?,?,?)"

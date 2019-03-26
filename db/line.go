@@ -106,7 +106,7 @@ func CreateTableLines(db DB) error {
 	return err
 }
 
-func NewLine(db DB, line *Line) error {
+func InsertLine(db DB, line *Line) error {
 	const stmt1 = "INSERT INTO " + TextLinesTableName +
 		"(BookID,PageID,LineID,ImagePath,LLeft,LRight,LTop,LBottom) " +
 		"VALUES(?,?,?,?,?,?,?,?)"

@@ -26,7 +26,7 @@ func newTestLine(t *testing.T, db DB, id int) *Line {
 		Top:       id * 1000,
 		Bottom:    id * 10000,
 	}
-	if err := NewLine(db, line); err != nil {
+	if err := InsertLine(db, line); err != nil {
 		t.Fatalf("got error: %v", err)
 	}
 	return line

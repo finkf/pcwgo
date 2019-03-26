@@ -19,7 +19,7 @@ func newTestPage(t *testing.T, db DB, id int) *Page {
 		Top:       id * 1000,
 		Bottom:    id * 10000,
 	}
-	err := NewPage(db, page)
+	err := InsertPage(db, page)
 	if err != nil {
 		t.Fatalf("got error: %v", err)
 	}

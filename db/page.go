@@ -27,7 +27,7 @@ func CreateTablePages(db DB) error {
 	return err
 }
 
-func NewPage(db DB, page *Page) error {
+func InsertPage(db DB, page *Page) error {
 	const stmt = "INSERT INTO " + PagesTableName +
 		"(BookID,PageID,ImagePath,PLeft,PRight,PTop,PBottom)" +
 		"VALUES(?,?,?,?,?,?,?)"

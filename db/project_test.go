@@ -25,14 +25,14 @@ func newTestProject(t *testing.T, db DB, id int) *Project {
 		Pages:  1,
 	}
 
-	if err := NewProject(db, project); err != nil {
+	if err := InsertProject(db, project); err != nil {
 		t.Fatalf("got error: %v", err)
 	}
 	return project
 }
 
 func mustNewUser(db *sql.DB, u User) User {
-	nu, err := NewUser(db, u)
+	nu, err := InsertUser(db, u)
 	if err != nil {
 		panic(err)
 	}
@@ -40,7 +40,7 @@ func mustNewUser(db *sql.DB, u User) User {
 }
 
 func mustNewProject(db *sql.DB, p Project) *Project {
-	err := NewProject(db, &p)
+	err := InsertProject(db, &p)
 	if err != nil {
 		panic(err)
 	}

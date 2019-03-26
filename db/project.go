@@ -55,7 +55,7 @@ func CreateAllTables(db DB) error {
 	return nil
 }
 
-func NewProject(db DB, p *Project) error {
+func InsertProject(db DB, p *Project) error {
 	const stmt = "INSERT INTO " + ProjectsTableName + "(Owner,Origin,Pages) values(?,?,?)"
 	res, err := Exec(db, stmt, p.Owner.ID, p.Origin, p.Pages)
 	if err != nil {

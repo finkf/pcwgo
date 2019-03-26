@@ -21,7 +21,7 @@ func newTestBook(t *testing.T, db DB, id int) *Book {
 		Directory:   fmt.Sprintf("book_directory_%d", id),
 		Lang:        fmt.Sprintf("book_lang_%d", id),
 	}
-	err := NewBook(db, book)
+	err := InsertBook(db, book)
 	if err != nil {
 		t.Fatalf("got error: %v", err)
 	}

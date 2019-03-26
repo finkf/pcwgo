@@ -19,9 +19,9 @@ func withTableSessions(f func(*sql.DB)) {
 	})
 }
 
-func TestNewSession(t *testing.T) {
+func TestInsertSession(t *testing.T) {
 	withTableSessions(func(db *sql.DB) {
-		u, err := NewUser(db, User{
+		u, err := InsertUser(db, User{
 			Name:      "test",
 			Email:     "test@example.com",
 			Institute: "test institute",
@@ -29,7 +29,7 @@ func TestNewSession(t *testing.T) {
 		if err != nil {
 			t.Fatalf("got error: %v", err)
 		}
-		s, err := NewSession(db, u)
+		s, err := InsertSession(db, u)
 		if err != nil {
 			t.Fatalf("got error: %v", err)
 		}
