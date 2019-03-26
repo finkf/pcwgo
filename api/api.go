@@ -42,8 +42,8 @@ type Version struct {
 	Version string `json:"version"`
 }
 
-// CorrectLineRequest defines the post data for a line correction.
-type CorrectLineRequest struct {
+// Correction defines the post data for correction requests.
+type Correction struct {
 	Correction string `json:"correction"`
 }
 

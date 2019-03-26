@@ -145,20 +145,28 @@ func (c Client) GetLine(bookID, pageID, lineID int) (*Line, error) {
 	return &line, err
 }
 
-// PostLine posts content to the given line.
-func (c Client) PostLine(bookID, pageID, lineID int, cor CorrectLineRequest) (*Line, error) {
+// PostLine posts new content to the given line.
+func (c Client) PostLine(bookID, pageID, lineID int, cor Correction) (*Line, error) {
 	var line Line
 	url := c.url(linePath(bookID, pageID, lineID), Auth, c.Session.Auth)
 	err := c.post(url, cor, &line)
 	return &line, err
 }
 
-// GetWords returns the tokens for the given line.
+// GetTokens returns the tokens for the given line.
 func (c Client) GetWords(bookID, pageID, lineID int) (Tokens, error) {
 	var tokens Tokens
 	url := c.url(linePath(bookID, pageID, lineID)+"/tokens", Auth, c.Session.Auth)
 	err := c.get(url, &tokens)
 	return tokens, err
+}
+
+// PostWord posts new content to the given token.
+func (c Client) PostToken(bookID, pageID, lineID, tokenID int, cor Correction) (*Token, error) {
+	var token Token
+	url := c.url(tokenPath(bookID, pageID, lineID, tokenID), Auth, c.Session.Auth)
+	err := c.post(url, cor, &token)
+	return &token, err
 }
 
 // Search searches for tokens or error patterns.
@@ -222,6 +230,11 @@ func pagePath(id, pageid int) string {
 
 func linePath(id, pageid, lineid int) string {
 	return formatID("/books/%d/pages/%d/lines/%d", id, pageid, lineid)
+}
+
+func tokenPath(id, pageid, lineid, tokenid int) string {
+	return formatID("/books/%d/pages/%d/lines/%d/tokens/%d",
+		id, pageid, lineid, tokenid)
 }
 
 func formatID(url string, args ...interface{}) string {
