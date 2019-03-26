@@ -10,17 +10,16 @@ import (
 )
 
 var (
-	u1, u2, u3 User
+	u1, u2, u3 *User
 	p1, p2, p3 *Project
 )
 
-func newTestProject(t *testing.T, db DB, id int) *Project {
-	if err := CreateTableBooks(db); err != nil {
-		t.Fatalf("got error: %v", err)
+func newTestProject(t *testing.T, db DB, id int, user *User) *Project {
+	if user == nil {
+		user = newTestUser(t, db, id)
 	}
-	u := newTestUser(t, db, id)
 	project := &Project{
-		Owner:  u,
+		Owner:  *user,
 		Origin: int64(id),
 		Pages:  1,
 	}
@@ -31,42 +30,26 @@ func newTestProject(t *testing.T, db DB, id int) *Project {
 	return project
 }
 
-func mustNewUser(db *sql.DB, u User) User {
-	err := InsertUser(db, &u)
-	if err != nil {
-		panic(err)
-	}
-	return u
-}
-
-func mustNewProject(db *sql.DB, p Project) *Project {
-	err := InsertProject(db, &p)
-	if err != nil {
-		panic(err)
-	}
-	return &p
-}
-
-func withProjectDB(f func(*sql.DB)) {
+func withProjectDB(t *testing.T, f func(*sql.DB)) {
 	sqlite.With("projects.sqlite", func(db *sql.DB) {
 		if err := CreateTableUsers(db); err != nil {
-			panic(err)
+			t.Fatalf("got error: %v", err)
 		}
 		if err := CreateTableProjects(db); err != nil {
-			panic(err)
+			t.Fatalf("got error: %v", err)
 		}
-		u1 = mustNewUser(db, User{Name: "test1", Email: "email1"})
-		u2 = mustNewUser(db, User{Name: "test2", Email: "email2"})
-		u3 = mustNewUser(db, User{Name: "test3", Email: "email3"})
-		p1 = mustNewProject(db, Project{Pages: 1, Origin: 1, Owner: u1})
-		p2 = mustNewProject(db, Project{Pages: 2, Origin: 2, Owner: u1})
-		p3 = mustNewProject(db, Project{Pages: 3, Origin: 3, Owner: u2})
+		u1 = newTestUser(t, db, 1)
+		u2 = newTestUser(t, db, 2)
+		u3 = newTestUser(t, db, 3)
+		p1 = newTestProject(t, db, 1, u1)
+		p2 = newTestProject(t, db, 2, u1)
+		p3 = newTestProject(t, db, 3, u2)
 		f(db)
 	})
 }
 
 func TestFindProjectByID(t *testing.T) {
-	withProjectDB(func(db *sql.DB) {
+	withProjectDB(t, func(db *sql.DB) {
 		tests := []struct {
 			id    int64
 			want  *Project
@@ -87,7 +70,7 @@ func TestFindProjectByID(t *testing.T) {
 					t.Fatalf("expected found: %t; got %t", tc.found, found)
 				}
 				if tc.found && got.String() != tc.want.String() {
-					t.Fatalf("epected project: %s; got %s", got, tc.want)
+					t.Fatalf("epected project: %s; got %s", got.String(), tc.want.String())
 				}
 			})
 		}
@@ -95,9 +78,9 @@ func TestFindProjectByID(t *testing.T) {
 }
 
 func TestFindProjectByUser(t *testing.T) {
-	withProjectDB(func(db *sql.DB) {
+	withProjectDB(t, func(db *sql.DB) {
 		tests := []struct {
-			u    User
+			u    *User
 			want []Project
 		}{
 			{u1, []Project{*p1, *p2}},
@@ -106,7 +89,7 @@ func TestFindProjectByUser(t *testing.T) {
 		}
 		for _, tc := range tests {
 			t.Run(strconv.Itoa(int(tc.u.ID)), func(t *testing.T) {
-				ps, err := FindProjectByUser(db, tc.u)
+				ps, err := FindProjectByOwner(db, tc.u.ID)
 				if err != nil {
 					t.Fatalf("got error: %s", err)
 				}

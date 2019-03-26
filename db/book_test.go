@@ -9,7 +9,7 @@ func newTestBook(t *testing.T, db DB, id int) *Book {
 	if err := CreateTableBooks(db); err != nil {
 		t.Fatalf("got error: %v", err)
 	}
-	p := newTestProject(t, db, id)
+	p := newTestProject(t, db, id, nil)
 	book := &Book{
 		BookID:      int(p.ID),
 		Author:      fmt.Sprintf("book_author_%d", id),

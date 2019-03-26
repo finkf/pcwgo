@@ -8,7 +8,7 @@ import (
 	"github.com/finkf/pcwgo/db/sqlite"
 )
 
-func newTestUser(t *testing.T, db DB, id int) User {
+func newTestUser(t *testing.T, db DB, id int) *User {
 	if err := CreateTableUsers(db); err != nil {
 		t.Fatalf("got error: %v", err)
 	}
@@ -22,7 +22,7 @@ func newTestUser(t *testing.T, db DB, id int) User {
 	if err != nil {
 		t.Fatalf("got error: %v", err)
 	}
-	return user
+	return &user
 }
 
 func withTableUsers(t *testing.T, f func(*sql.DB)) {

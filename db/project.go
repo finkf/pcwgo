@@ -71,7 +71,7 @@ func InsertProject(db DB, p *Project) error {
 
 func FindProjectByID(db DB, id int64) (*Project, bool, error) {
 	const stmt = "" +
-		"SELECT p.ID,p.Origin,p.Pages,u.ID,u.Name,u.Email,u.Admin " +
+		"SELECT p.ID,p.Origin,p.Pages,u.ID,u.Name,u.Email,u.Institute,u.Admin " +
 		"FROM " + ProjectsTableName + " p JOIN " + UsersTableName + " u ON p.Owner=u.ID " +
 		"WHERE p.ID=?"
 	rows, err := Query(db, stmt, id)
@@ -89,12 +89,12 @@ func FindProjectByID(db DB, id int64) (*Project, bool, error) {
 	return &p, true, nil
 }
 
-func FindProjectByUser(db DB, u User) ([]Project, error) {
+func FindProjectByOwner(db DB, owner int64) ([]Project, error) {
 	const stmt = "" +
-		"SELECT p.ID,p.Origin,p.Pages,u.ID,u.Name,u.Email,u.Admin " +
+		"SELECT p.ID,p.Origin,p.Pages,u.ID,u.Name,u.Email,u.Institute,u.Admin " +
 		"FROM " + ProjectsTableName + " p JOIN " + UsersTableName + " u on p.Owner=u.ID " +
 		"WHERE p.Owner=?"
-	rows, err := Query(db, stmt, u.ID)
+	rows, err := Query(db, stmt, owner)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +110,8 @@ func FindProjectByUser(db DB, u User) ([]Project, error) {
 }
 
 func scanProject(rows *sql.Rows, p *Project) error {
-	if err := rows.Scan(&p.ID, &p.Origin, &p.Pages, &p.Owner.ID, &p.Owner.Name, &p.Owner.Email, &p.Owner.Admin); err != nil {
+	if err := rows.Scan(&p.ID, &p.Origin, &p.Pages, &p.Owner.ID, &p.Owner.Name,
+		&p.Owner.Email, &p.Owner.Institute, &p.Owner.Admin); err != nil {
 		return err
 	}
 	return nil
