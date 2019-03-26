@@ -152,7 +152,7 @@ func bookPath(id int) string {
 }
 
 func pagePath(id, pageid int) string {
-	return formatID("/books/%d/pages", id, pageid)
+	return formatID("/books/%d/pages/%d", id, pageid)
 }
 
 func formatID(url string, args ...interface{}) string {
