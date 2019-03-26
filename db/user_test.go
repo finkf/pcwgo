@@ -1,15 +1,33 @@
-package user
+package db
 
 import (
 	"database/sql"
+	"fmt"
 	"testing"
 
-	"github.com/finkf/pcwgo/database/sqlite"
+	"github.com/finkf/pcwgo/db/sqlite"
 )
+
+func newTestUser(t *testing.T, db DB, id int) User {
+	if err := CreateTableUsers(db); err != nil {
+		t.Fatalf("got error: %v", err)
+	}
+	user := User{
+		Name:      fmt.Sprintf("user_name_%d", id),
+		Email:     fmt.Sprintf("user_email_%d", id),
+		Institute: fmt.Sprintf("user_institute_%d", id),
+		Admin:     (id % 2) != 0, // odd ids are admins
+	}
+	u, err := NewUser(db, user)
+	if err != nil {
+		t.Fatalf("got error: %v", err)
+	}
+	return u
+}
 
 func withTableUsers(t *testing.T, f func(*sql.DB)) {
 	sqlite.With("users.sqlite", func(db *sql.DB) {
-		if err := CreateTable(db); err != nil {
+		if err := CreateTableUsers(db); err != nil {
 			t.Fatalf("got error: %v", err)
 		}
 		f(db)
@@ -19,7 +37,7 @@ func withTableUsers(t *testing.T, f func(*sql.DB)) {
 func withTestUser(t *testing.T, u *User, f func(*sql.DB)) {
 	withTableUsers(t, func(db *sql.DB) {
 		var err error
-		*u, err = New(db, *u)
+		*u, err = NewUser(db, *u)
 		if err != nil {
 			t.Fatalf("got error: %v", err)
 		}
@@ -30,7 +48,7 @@ func withTestUser(t *testing.T, u *User, f func(*sql.DB)) {
 func TestNewUser(t *testing.T) {
 	withTableUsers(t, func(db *sql.DB) {
 		want := User{Name: "test", Email: "test@example.com"}
-		got, err := New(db, want)
+		got, err := NewUser(db, want)
 		if err != nil {
 			t.Fatalf("cannot create user: %v", err)
 		}
@@ -63,7 +81,7 @@ func TestUpdateUser(t *testing.T) {
 		if err := UpdateUser(db, want); err != nil {
 			t.Fatalf("got error: %v", err)
 		}
-		got, found, err := FindByID(db, want.ID)
+		got, found, err := FindUserByID(db, want.ID)
 		if err != nil {
 			t.Fatalf("got error: %v", err)
 		}
@@ -82,7 +100,7 @@ func TestDeleteUser(t *testing.T) {
 		if err := DeleteUserByID(db, want.ID); err != nil {
 			t.Fatalf("got error: %v", err)
 		}
-		_, found, err := FindByID(db, want.ID)
+		_, found, err := FindUserByID(db, want.ID)
 		if err != nil {
 			t.Fatalf("got error: %v", err)
 		}
