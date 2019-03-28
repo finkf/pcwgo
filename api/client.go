@@ -18,14 +18,14 @@ import (
 type Client struct {
 	client  *http.Client
 	Host    string
-	Session Session
+	Session db.Session
 }
 
 // Authenticate creates a new Client from a given auth-token.
 func Authenticate(host, authToken string) *Client {
 	return &Client{
 		Host:    host,
-		Session: Session{Auth: authToken},
+		Session: db.Session{Auth: authToken},
 		client:  &http.Client{},
 	}
 }
@@ -44,18 +44,18 @@ func Login(host, email, password string) (*Client, error) {
 		Email:    email,
 		Password: password,
 	}
-	var s Session
+	var s db.Session
 	err := c.post(c.url("/login"), login, &s)
 	if err != nil {
 		return nil, err
 	}
 	log.Debugf("session: %s", db.Session(s))
-	c.Session = Session(s)
+	c.Session = db.Session(s)
 	return c, nil
 }
 
-func (c Client) getLogin() (Session, error) {
-	var s Session
+func (c Client) getLogin() (db.Session, error) {
+	var s db.Session
 	err := c.get(c.url("/login", Auth, c.Session.Auth), &s)
 	return s, err
 }
@@ -68,23 +68,23 @@ func (c Client) GetUsers() (Users, error) {
 }
 
 // GetUser returns the user with the given id.
-func (c Client) GetUser(id int64) (User, error) {
-	var res User
+func (c Client) GetUser(id int64) (db.User, error) {
+	var res db.User
 	err := c.get(c.url(userPath(id), Auth, c.Session.Auth), &res)
 	return res, err
 }
 
 // PutUser updates the settings for a user and returns it.
-func (c Client) PutUser(u CreateUserRequest) (User, error) {
-	var res User
+func (c Client) PutUser(u CreateUserRequest) (db.User, error) {
+	var res db.User
 	url := c.url(userPath(u.User.ID), Auth, c.Session.Auth)
 	err := c.put(url, u, &res)
 	return res, err
 }
 
 // PostUser creates a new User and returns it.
-func (c Client) PostUser(u CreateUserRequest) (User, error) {
-	var res User
+func (c Client) PostUser(u CreateUserRequest) (db.User, error) {
+	var res db.User
 	url := c.url("/users", Auth, c.Session.Auth)
 	err := c.post(url, u, &res)
 	return res, err

@@ -26,8 +26,8 @@ func (l LoginRequest) String() string {
 
 // CreateUserRequest defines the data to create new users.
 type CreateUserRequest struct {
-	User     User   `json:"user"`
-	Password string `json:"password"`
+	User     db.User `json:"user"`
+	Password string  `json:"password"`
 }
 
 // ErrorResponse defines the data of error responses
@@ -47,15 +47,9 @@ type Correction struct {
 	Correction string `json:"correction"`
 }
 
-// Session is just a convinient typedef for db.Session
-type Session db.Session
-
-// User is just a convinient typedef for db.User
-type User db.User
-
 // Users defines the repsonse data for requests to list the system's users.
 type Users struct {
-	Users []User `json:"users"`
+	Users []db.User `json:"users"`
 }
 
 // BookWithPages is a Book with an additional field that holds all the
