@@ -43,15 +43,15 @@ func (s Session) String() string {
 		s.User, s.Auth, time.Unix(s.Expires, 0).Format("2006-01-02:15:04"))
 }
 
-// CreateTable creates the sessions table.
+// CreateTableSessions creates the sessions table.
 func CreateTableSessions(db DB) error {
 	stmt := "CREATE TABLE IF NOT EXISTS " + sessionsTable + ";"
 	_, err := Exec(db, stmt)
 	return err
 }
 
-// Insert creates a new unique session for the given user in the database
-// and returns the new session.
+// InsertSession creates a new unique session for the given user in
+// the database and returns the new session.
 func InsertSession(db DB, u User) (Session, error) {
 	auth, err := genAuth()
 	if err != nil {
