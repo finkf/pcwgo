@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/finkf/pcwgo/api"
 	"github.com/finkf/pcwgo/db/sqlite"
 )
 
-func newTestUser(t *testing.T, db DB, id int) *User {
+func newTestUser(t *testing.T, db DB, id int) *api.User {
 	if err := CreateTableUsers(db); err != nil {
 		t.Fatalf("got error: %v", err)
 	}
-	user := User{
+	user := api.User{
 		Name:      fmt.Sprintf("user_name_%d", id),
 		Email:     fmt.Sprintf("user_email_%d", id),
 		Institute: fmt.Sprintf("user_institute_%d", id),
@@ -34,7 +35,7 @@ func withTableUsers(t *testing.T, f func(*sql.DB)) {
 	})
 }
 
-func withTestUser(t *testing.T, u *User, f func(*sql.DB)) {
+func withTestUser(t *testing.T, u *api.User, f func(*sql.DB)) {
 	withTableUsers(t, func(db *sql.DB) {
 		var err error
 		err = InsertUser(db, u)
@@ -47,7 +48,7 @@ func withTestUser(t *testing.T, u *User, f func(*sql.DB)) {
 
 func TestInsertUser(t *testing.T) {
 	withTableUsers(t, func(db *sql.DB) {
-		want := User{Name: "test", Email: "test@example.com"}
+		want := api.User{Name: "test", Email: "test@example.com"}
 		got := want
 		err := InsertUser(db, &got)
 		if err != nil {
@@ -61,7 +62,7 @@ func TestInsertUser(t *testing.T) {
 }
 
 func TestUserPassword(t *testing.T) {
-	want := User{Name: "test", Email: "test@example.com"}
+	want := api.User{Name: "test", Email: "test@example.com"}
 	withTestUser(t, &want, func(db *sql.DB) {
 		if err := SetUserPassword(db, want, "test-passwd"); err != nil {
 			t.Fatalf("got error: %v", err)
@@ -76,7 +77,7 @@ func TestUserPassword(t *testing.T) {
 }
 
 func TestUpdateUser(t *testing.T) {
-	want := User{Name: "test", Email: "test@example.com"}
+	want := api.User{Name: "test", Email: "test@example.com"}
 	withTestUser(t, &want, func(db *sql.DB) {
 		want.Institute = "test institute"
 		if err := UpdateUser(db, want); err != nil {
@@ -96,7 +97,7 @@ func TestUpdateUser(t *testing.T) {
 }
 
 func TestDeleteUser(t *testing.T) {
-	want := User{Name: "test", Email: "test@example.com"}
+	want := api.User{Name: "test", Email: "test@example.com"}
 	withTestUser(t, &want, func(db *sql.DB) {
 		if err := DeleteUserByID(db, want.ID); err != nil {
 			t.Fatalf("got error: %v", err)

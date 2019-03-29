@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/finkf/pcwgo/api"
 	"github.com/finkf/pcwgo/db/sqlite"
 )
 
@@ -21,7 +22,7 @@ func withTableSessions(f func(*sql.DB)) {
 
 func TestInsertSession(t *testing.T) {
 	withTableSessions(func(db *sql.DB) {
-		user := User{
+		user := api.User{
 			Name:      "test",
 			Email:     "test@example.com",
 			Institute: "test institute",

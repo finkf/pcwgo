@@ -2,10 +2,11 @@ package db
 
 import (
 	"crypto/rand"
-	"fmt"
 	"math/big"
 	"strconv"
 	"time"
+
+	"github.com/finkf/pcwgo/api"
 )
 
 const (
@@ -25,24 +26,6 @@ var sessionsTable = "" +
 	"Expires INTEGER NOT NULL" +
 	")"
 
-type Session struct {
-	User    User   `json:"user"`
-	Auth    string `json:"auth"`
-	Expires int64  `json:"expires"`
-}
-
-func (s Session) Expired() bool {
-	if s.Expires < time.Now().Unix() {
-		return true
-	}
-	return false
-}
-
-func (s Session) String() string {
-	return fmt.Sprintf("%s [%s] expires: %s",
-		s.User, s.Auth, time.Unix(s.Expires, 0).Format("2006-01-02:15:04"))
-}
-
 // CreateTableSessions creates the sessions table.
 func CreateTableSessions(db DB) error {
 	stmt := "CREATE TABLE IF NOT EXISTS " + sessionsTable + ";"
@@ -52,22 +35,22 @@ func CreateTableSessions(db DB) error {
 
 // InsertSession creates a new unique session for the given user in
 // the database and returns the new session.
-func InsertSession(db DB, u User) (Session, error) {
+func InsertSession(db DB, u api.User) (api.Session, error) {
 	auth, err := genAuth()
 	if err != nil {
-		return Session{}, err
+		return api.Session{}, err
 	}
 	expires := time.Now().Add(Expires).Unix()
 	// Insert new session for the user.
 	const stmt2 = "INSERT INTO " + SessionsTableName + "(Auth,UserID,Expires)values(?,?,?)"
 	_, err = Exec(db, stmt2, auth, u.ID, expires)
 	if err != nil {
-		return Session{}, err
+		return api.Session{}, err
 	}
-	return Session{Auth: auth, User: u, Expires: expires}, nil
+	return api.Session{Auth: auth, User: u, Expires: expires}, nil
 }
 
-func FindSessionByID(db DB, id string) (Session, bool, error) {
+func FindSessionByID(db DB, id string) (api.Session, bool, error) {
 	s, found, err := selectSession(db, id)
 	if !found || err != nil {
 		return s, found, err
@@ -81,23 +64,23 @@ func DeleteSessionByUserID(db DB, id int64) error {
 	return err
 }
 
-func selectSession(db DB, id string) (Session, bool, error) {
+func selectSession(db DB, id string) (api.Session, bool, error) {
 	const stmt = "" +
 		"SELECT s.Auth,s.Expires,u.ID,u.Name,u.Email,u.Institute,u.Admin " +
 		"FROM " + SessionsTableName + " s JOIN " +
 		UsersTableName + " u ON s.UserID=u.ID WHERE s.Auth=?"
 	rows, err := Query(db, stmt, id)
 	if err != nil {
-		return Session{}, false, err
+		return api.Session{}, false, err
 	}
 	defer rows.Close()
 	if !rows.Next() {
-		return Session{}, false, nil
+		return api.Session{}, false, nil
 	}
-	var s Session
+	var s api.Session
 	if err = rows.Scan(&s.Auth, &s.Expires, &s.User.ID, &s.User.Name,
 		&s.User.Email, &s.User.Institute, &s.User.Admin); err != nil {
-		return Session{}, false, err
+		return api.Session{}, false, err
 	}
 	return s, true, nil
 }

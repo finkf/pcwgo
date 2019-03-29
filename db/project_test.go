@@ -6,15 +6,16 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/finkf/pcwgo/api"
 	"github.com/finkf/pcwgo/db/sqlite"
 )
 
 var (
-	u1, u2, u3 *User
+	u1, u2, u3 *api.User
 	p1, p2, p3 *Project
 )
 
-func newTestProject(t *testing.T, db DB, id int, user *User) *Project {
+func newTestProject(t *testing.T, db DB, id int, user *api.User) *Project {
 	if user == nil {
 		user = newTestUser(t, db, id)
 	}
@@ -80,7 +81,7 @@ func TestFindProjectByID(t *testing.T) {
 func TestFindProjectByUser(t *testing.T) {
 	withProjectDB(t, func(db *sql.DB) {
 		tests := []struct {
-			u    *User
+			u    *api.User
 			want []Project
 		}{
 			{u1, []Project{*p1, *p2}},

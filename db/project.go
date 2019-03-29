@@ -3,22 +3,31 @@ package db
 import (
 	"database/sql"
 	"fmt"
+
+	"github.com/finkf/pcwgo/api"
 )
 
-// TableName of the the database table.
+// ProjectsTableName of the the database table.
 const ProjectsTableName = "projects"
 
 const projectsTable = "" +
 	ProjectsTableName + " (" +
 	"ID INTEGER NOT NULL PRIMARY KEY /*!40101 AUTO_INCREMENT */," +
 	"Owner INTEGER NOT NULL REFERENCES Users(ID)," +
-	"Origin INTEGER NOT NULL," +
+	"Origin INTEGER NOT NULL REFERENCES ID," +
 	"Pages INTEGER NOT NULL" +
+	")"
+
+const ProjectPagesTableName = "project_pages"
+
+const projectPagesTable = ProjectPagesTableName + " (" +
+	"ProjectID INT NOT NULL REFERENCES Projects(id)," +
+	"PageID INT NOT NULL REFERENCES Pages(PageID)" +
 	")"
 
 type Project struct {
 	ID, Origin, Pages int64
-	Owner             User
+	Owner             api.User
 }
 
 func (p Project) String() string {
@@ -47,6 +56,9 @@ func CreateAllTables(db DB) error {
 	}
 	if err := CreateTablePages(db); err != nil {
 		return fmt.Errorf("cannot create table %s: %v", PagesTableName, err)
+	}
+	if err := CreateTableProjectPages(db); err != nil {
+		return fmt.Errorf("cannot create table %s: %v", ProjectPagesTableName, err)
 	}
 	if err := CreateTableLines(db); err != nil {
 		return fmt.Errorf("cannot create tables %s,%s: %v",
@@ -115,4 +127,26 @@ func scanProject(rows *sql.Rows, p *Project) error {
 		return err
 	}
 	return nil
+}
+
+func CreateTableProjectPages(db DB) error {
+	_, err := Exec(db, "CREATE TABLE IF NOT EXISTS "+projectPagesTable)
+	return err
+}
+
+func FindProjectPages(db DB, projectID int) ([]int, error) {
+	const stmt = "SELECT PageID FROM " + ProjectPagesTableName + " WHERE ProjectID=?"
+	rows, err := Query(db, stmt, projectID)
+	if err != nil {
+		return nil, err
+	}
+	var pageIDs []int
+	for rows.Next() {
+		var pageID int
+		if err := rows.Scan(&pageID); err != nil {
+			return nil, err
+		}
+		pageIDs = append(pageIDs, pageID)
+	}
+	return pageIDs, nil
 }

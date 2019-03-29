@@ -8,6 +8,7 @@ import (
 	"io"
 	"strconv"
 
+	"github.com/finkf/pcwgo/api"
 	"golang.org/x/crypto/scrypt"
 )
 
@@ -32,22 +33,6 @@ var usersTable = "" +
 	"Admin BOOLEAN DEFAULT(false) NOT NULL" +
 	")"
 
-type User struct {
-	Name      string `json:"name"`
-	Email     string `json:"email"`
-	Institute string `json:"institute"`
-	ID        int64  `json:"id"`
-	Admin     bool   `json:"admin"`
-}
-
-func (u User) String() string {
-	adm := ""
-	if u.Admin {
-		adm = "/admin"
-	}
-	return fmt.Sprintf("%s/%d%s [%s,%s]", u.Email, u.ID, adm, u.Name, u.Institute)
-}
-
 // CreateTableUsers creates the users table if it does not already
 // exist.
 func CreateTableUsers(db DB) error {
@@ -55,7 +40,9 @@ func CreateTableUsers(db DB) error {
 	return err
 }
 
-func InsertUser(db DB, user *User) error {
+// InsertUser inserts a new user into the database.  The user's id is
+// adjusted accordingly.
+func InsertUser(db DB, user *api.User) error {
 	const stmt = "INSERT INTO " + UsersTableName + "(Name,Email,Institute,Admin) values(?,?,?,?)"
 	res, err := Exec(db, stmt, user.Name, user.Email, user.Institute, user.Admin)
 	if err != nil {
@@ -69,7 +56,7 @@ func InsertUser(db DB, user *User) error {
 	return nil
 }
 
-func SetUserPassword(db DB, user User, password string) error {
+func SetUserPassword(db DB, user api.User, password string) error {
 	hash, salt, err := genSaltAndHash(password)
 	if err != nil {
 		return err
@@ -79,7 +66,7 @@ func SetUserPassword(db DB, user User, password string) error {
 	return err
 }
 
-func AuthenticateUser(db DB, user User, password string) error {
+func AuthenticateUser(db DB, user api.User, password string) error {
 	const stmt = "SELECT Hash,Salt FROM " + UsersTableName + " WHERE ID=?"
 	rows, err := Query(db, stmt, user.ID)
 	if err != nil {
@@ -107,7 +94,7 @@ func AuthenticateUser(db DB, user User, password string) error {
 	return nil
 }
 
-func UpdateUser(db DB, user User) error {
+func UpdateUser(db DB, user api.User) error {
 	const stmt = "UPDATE " + UsersTableName + " SET Name=?,Email=?,Institute=? WHERE ID=?"
 	_, err := Exec(db, stmt, user.Name, user.Email, user.Institute, user.ID)
 	return err
@@ -119,25 +106,25 @@ func DeleteUserByID(db DB, id int64) error {
 	return err
 }
 
-func FindUserByID(db DB, id int64) (User, bool, error) {
+func FindUserByID(db DB, id int64) (api.User, bool, error) {
 	const stmt = "SELECT ID,Name,Email,Institute,Admin FROM " + UsersTableName + " WHERE ID=?"
 	return selectUser(db, stmt, id)
 }
 
-func FindUserByEmail(db DB, email string) (User, bool, error) {
+func FindUserByEmail(db DB, email string) (api.User, bool, error) {
 	const stmt = "SELECT ID,Name,Email,Institute,Admin FROM " + UsersTableName + " WHERE Email=?"
 	return selectUser(db, stmt, email)
 }
 
 // FindAllUsers returns all users in the database.
-func FindAllUsers(db DB) ([]User, error) {
+func FindAllUsers(db DB) ([]api.User, error) {
 	const stmt = "SELECT ID,Name,Email,Institute,Admin FROM " + UsersTableName
 	rows, err := Query(db, stmt)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var users []User
+	var users []api.User
 	for rows.Next() {
 		user, err := getUserFromRow(rows)
 		if err != nil {
@@ -148,26 +135,26 @@ func FindAllUsers(db DB) ([]User, error) {
 	return users, nil
 }
 
-func selectUser(db DB, q string, args ...interface{}) (User, bool, error) {
+func selectUser(db DB, q string, args ...interface{}) (api.User, bool, error) {
 	rows, err := Query(db, q, args...)
 	if err != nil {
-		return User{}, false, err
+		return api.User{}, false, err
 	}
 	defer rows.Close()
 	if !rows.Next() {
-		return User{}, false, nil
+		return api.User{}, false, nil
 	}
 	user, err := getUserFromRow(rows)
 	if err != nil {
-		return User{}, false, err
+		return api.User{}, false, err
 	}
 	return user, true, nil
 }
 
-func getUserFromRow(rows *sql.Rows) (User, error) {
-	var user User
+func getUserFromRow(rows *sql.Rows) (api.User, error) {
+	var user api.User
 	if err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Institute, &user.Admin); err != nil {
-		return User{}, err
+		return api.User{}, err
 	}
 	return user, nil
 }
