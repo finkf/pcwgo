@@ -3,8 +3,7 @@ package api
 import (
 	"fmt"
 	"net/http"
-
-	"github.com/finkf/pcwgo/db"
+	"time"
 )
 
 const (
@@ -26,8 +25,8 @@ func (l LoginRequest) String() string {
 
 // CreateUserRequest defines the data to create new users.
 type CreateUserRequest struct {
-	User     db.User `json:"user"`
-	Password string  `json:"password"`
+	User     User   `json:"user"`
+	Password string `json:"password"`
 }
 
 // ErrorResponse defines the data of error responses
@@ -47,9 +46,48 @@ type Correction struct {
 	Correction string `json:"correction"`
 }
 
+// Session defines an authenticates user sessions.  A session is
+// attached to a unique user with and authentication string and an
+// expiration date.
+type Session struct {
+	User    User   `json:"user"`
+	Auth    string `json:"auth"`
+	Expires int64  `json:"expires"`
+}
+
+// Expired returns true if the session has exprired.
+func (s Session) Expired() bool {
+	if s.Expires < time.Now().Unix() {
+		return true
+	}
+	return false
+}
+
+func (s Session) String() string {
+	return fmt.Sprintf("%s [%s] expires: %s",
+		s.User, s.Auth, time.Unix(s.Expires, 0).Format("2006-01-02:15:04"))
+}
+
+// User defines basic users.
+type User struct {
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	Institute string `json:"institute"`
+	ID        int64  `json:"id"`
+	Admin     bool   `json:"admin"`
+}
+
+func (u User) String() string {
+	adm := ""
+	if u.Admin {
+		adm = "*"
+	}
+	return fmt.Sprintf("%s(%d%s)", u.Email, u.ID, adm)
+}
+
 // Users defines the repsonse data for requests to list the system's users.
 type Users struct {
-	Users []db.User `json:"users"`
+	Users []User `json:"users"`
 }
 
 // BookWithPages is a Book with an additional field that holds all the
