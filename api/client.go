@@ -219,7 +219,7 @@ func (c Client) GetLineImage(line *Line) (image.Image, error) {
 	if host == "" {
 		host = DefaultImageHost(c.Host)
 	}
-	url := host + "/" + line.ImageFile
+	url := host + "/" + line.ImgFile
 	log.Debugf("GET %s", url)
 	res, err := c.client.Get(url)
 	if err != nil {
