@@ -4,20 +4,33 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"image"
+	"image/png"
 	"io"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
 
+// DefaultImageHost returns the default host address of the main
+// webserver that serves the images.  It just strips the port (if any)
+// from the given host address.
+func DefaultImageHost(host string) string {
+	if pos := strings.LastIndex(host, ":"); pos != -1 {
+		return host[:pos]
+	}
+	return host
+}
+
 // Client implements the api calls for the pcw backend.
 // Use Login to initalize the client.
 type Client struct {
-	client  *http.Client
-	Host    string
-	Session Session
+	client          *http.Client
+	Host, ImageHost string
+	Session         Session
 }
 
 // Authenticate creates a new Client from a given auth-token.
@@ -198,6 +211,27 @@ func (c Client) Raw(path string, out io.Writer) error {
 	defer res.Body.Close()
 	_, err = io.Copy(out, res.Body)
 	return err
+}
+
+// GetLineImage downloads the line image for the given line.  At this
+// point only PNGs are accepted.
+func (c Client) GetLineImage(line *Line) (image.Image, error) {
+	host := c.ImageHost
+	if host == "" {
+		host = DefaultImageHost(c.Host)
+	}
+	url := filepath.Join(host, line.ImgFile)
+	log.Debugf("GET %s", url)
+	res, err := c.client.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	if res.Header.Get("Content-Type") != "image/png" {
+		return nil, fmt.Errorf("invalid Content-Type: %s",
+			res.Header.Get("Content-Type"))
+	}
+	return png.Decode(res.Body)
 }
 
 func (c Client) url(path string, keyvals ...string) string {
