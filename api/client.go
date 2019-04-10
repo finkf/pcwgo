@@ -120,7 +120,7 @@ func (c Client) GetBook(bookID int) (*Book, error) {
 	return &book, err
 }
 
-// GetBooks() returns all books of a user.
+// GetBooks returns all books of a user.
 func (c Client) GetBooks() (*Books, error) {
 	url := c.url("/books", Auth, c.Session.Auth)
 	var books Books
@@ -160,7 +160,7 @@ func (c Client) GetTokens(bookID, pageID, lineID int) (Tokens, error) {
 	return tokens, err
 }
 
-// PostWord posts new content to the given token.
+// PostToken posts new content to the given token.
 func (c Client) PostToken(bookID, pageID, lineID, tokenID int, cor Correction) (*Token, error) {
 	var token Token
 	url := c.url(tokenPath(bookID, pageID, lineID, tokenID), Auth, c.Session.Auth)
