@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -231,6 +232,37 @@ func (c Client) GetLineImage(line *Line) (image.Image, error) {
 			res.Header.Get("Content-Type"))
 	}
 	return png.Decode(res.Body)
+}
+
+// Download downloads the zipped book's contents.
+func (c Client) Download(pid int) (io.ReadCloser, error) {
+	// create archive and get its download destination
+	xurl := c.url(filepath.Join(bookPath(pid), "download"), Auth, c.Session.Auth)
+	var archive struct {
+		Archive string `json:"archive"`
+	}
+	if err := c.get(xurl, &archive); err != nil {
+		return nil, fmt.Errorf("cannot download: %v", err)
+	}
+	// download archive
+	host := c.ImageHost
+	if host == "" {
+		host = DefaultImageHost(c.Host)
+	}
+	log.Debugf("archive path: %s", archive.Archive)
+	xurl = host + "/" + archive.Archive +
+		"?" + url.PathEscape(Auth) + "=" + url.PathEscape(c.Session.Auth)
+	log.Debugf("GET %s", xurl)
+	res, err := c.client.Get(xurl)
+	if err != nil {
+		return nil, fmt.Errorf("cannot download: %v", err)
+	}
+	if res.Header.Get("Content-Type") != "application/zip" {
+		res.Body.Close()
+		return nil, fmt.Errorf("cannot download: invalid Content-Type: %s",
+			res.Header.Get("Content-Type"))
+	}
+	return res.Body, nil
 }
 
 func (c Client) url(path string, keyvals ...string) string {
