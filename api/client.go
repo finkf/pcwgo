@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"path/filepath"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -220,7 +219,7 @@ func (c Client) GetLineImage(line *Line) (image.Image, error) {
 	if host == "" {
 		host = DefaultImageHost(c.Host)
 	}
-	url := filepath.Join(host, line.ImgFile)
+	url := host + "/" + line.ImageFile
 	log.Debugf("GET %s", url)
 	res, err := c.client.Get(url)
 	if err != nil {
