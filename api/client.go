@@ -15,10 +15,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// DefaultImageHost returns the default host address of the main
+// DefaultWebHost returns the default host address of the main
 // webserver that serves the images.  It just strips the port (if any)
 // from the given host address.
-func DefaultImageHost(host string) string {
+func DefaultWebHost(host string) string {
 	if pos := strings.LastIndex(host, ":"); pos != -1 {
 		return host[:pos]
 	}
@@ -28,9 +28,9 @@ func DefaultImageHost(host string) string {
 // Client implements the api calls for the pcw backend.
 // Use Login to initalize the client.
 type Client struct {
-	client          *http.Client
-	Host, ImageHost string
-	Session         Session
+	client        *http.Client
+	Host, WebHost string
+	Session       Session
 }
 
 // Authenticate creates a new Client from a given auth-token.
@@ -241,9 +241,9 @@ func (c Client) Raw(path string, out io.Writer) error {
 // GetLineImage downloads the line image for the given line.  At this
 // point only PNGs are accepted.
 func (c Client) GetLineImage(line *Line) (image.Image, error) {
-	host := c.ImageHost
+	host := c.WebHost
 	if host == "" {
-		host = DefaultImageHost(c.Host)
+		host = DefaultWebHost(c.Host)
 	}
 	url := host + "/" + line.ImgFile
 	log.Debugf("GET %s", url)
@@ -270,9 +270,9 @@ func (c Client) Download(pid int) (io.ReadCloser, error) {
 		return nil, fmt.Errorf("cannot download: %v", err)
 	}
 	// download archive
-	host := c.ImageHost
+	host := c.WebHost
 	if host == "" {
-		host = DefaultImageHost(c.Host)
+		host = DefaultWebHost(c.Host)
 	}
 	log.Debugf("archive path: %s", archive.Archive)
 	xurl = host + "/" + archive.Archive +
