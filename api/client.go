@@ -258,11 +258,10 @@ func (c Client) GetLineImage(line *Line) (image.Image, error) {
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("cannot download: invalid response %d %s",
-			res.StatusCode, res.Status)
+		return nil, fmt.Errorf("cannot get line image: bad response %s", res.Status)
 	}
 	if res.Header.Get("Content-Type") != "image/png" {
-		return nil, fmt.Errorf("invalid Content-Type: %s",
+		return nil, fmt.Errorf("cannot get line image: invalid Content-Type: %s",
 			res.Header.Get("Content-Type"))
 	}
 	return png.Decode(res.Body)
@@ -290,8 +289,7 @@ func (c Client) Download(pid int) (io.ReadCloser, error) {
 	// do *not* defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		res.Body.Close()
-		return nil, fmt.Errorf("cannot download: invalid response %d %s",
-			res.StatusCode, res.Status)
+		return nil, fmt.Errorf("cannot download: bad response %s", res.Status)
 	}
 	if res.Header.Get("Content-Type") != "application/zip" {
 		res.Body.Close()
