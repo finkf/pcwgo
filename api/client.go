@@ -158,6 +158,12 @@ func (c Client) GetPage(bookID, pageID int) (*Page, error) {
 	return &page, err
 }
 
+// DeletePage deletes the given page.
+func (c Client) DeletePage(bookID, pageID int) error {
+	url := c.url(pagePath(bookID, pageID), Auth, c.Session.Auth)
+	return c.delete(url)
+}
+
 // GetLine returns the line with the given ids.
 func (c Client) GetLine(bookID, pageID, lineID int) (*Line, error) {
 	var line Line
