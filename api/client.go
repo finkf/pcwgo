@@ -193,6 +193,31 @@ func (c Client) Search(bookID int, query string, errorPattern bool) (*SearchResu
 	return &res, err
 }
 
+// Split splits a project.
+func (c Client) Split(pid, n int, random bool) (*Books, error) {
+	url := c.url(bookPath(pid)+"/split", Auth, c.Session.Auth)
+	split := struct {
+		N int  `json:"n"`
+		R bool `json:"random"`
+	}{N: n, R: random}
+	var books Books
+	err := c.post(url, split, &books)
+	return &books, err
+}
+
+// Assign assigns a project to another user.
+func (c Client) Assign(pid, uid int) error {
+	url := c.url(bookPath(pid)+"/assign", Auth, c.Session.Auth,
+		"uid", fmt.Sprintf("%d", uid))
+	return c.get(url, nil)
+}
+
+// Finish reassigns a project back to its original owner.
+func (c Client) Finish(pid int) error {
+	url := c.url(bookPath(pid)+"/finish", Auth, c.Session.Auth)
+	return c.get(url, nil)
+}
+
 // PostProfile sends a request to profile the book with the given id.
 func (c Client) PostProfile(bookID int) error {
 	url := c.url(bookPath(bookID)+"/profile", Auth, c.Session.Auth)
@@ -317,6 +342,9 @@ func (c Client) get(url string, out interface{}) error {
 			res.Status, res.Header.Get("Content-Type"))
 	}
 	log.Debugf("reponse from server: %s", res.Status)
+	if out == nil {
+		return nil
+	}
 	return json.NewDecoder(res.Body).Decode(out)
 }
 
