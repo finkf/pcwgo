@@ -250,11 +250,7 @@ func (c Client) Raw(path string, out io.Writer) error {
 // GetLineImage downloads the line image for the given line.  At this
 // point only PNGs are accepted.
 func (c Client) GetLineImage(line *Line) (image.Image, error) {
-	host := c.WebHost
-	if host == "" {
-		host = DefaultWebHost(c.Host)
-	}
-	url := host + "/" + line.ImgFile
+	url := c.WebHost + "/" + line.ImgFile
 	log.Debugf("GET %s", url)
 	res, err := c.client.Get(url)
 	if err != nil {
@@ -279,12 +275,8 @@ func (c Client) Download(pid int) (io.ReadCloser, error) {
 		return nil, fmt.Errorf("cannot download: %v", err)
 	}
 	// download archive
-	host := c.WebHost
-	if host == "" {
-		host = DefaultWebHost(c.Host)
-	}
 	log.Debugf("archive path: %s", archive.Archive)
-	xurl = host + "/" + archive.Archive +
+	xurl = c.WebHost + "/" + archive.Archive +
 		"?" + url.PathEscape(Auth) + "=" + url.PathEscape(c.Session.Auth)
 	log.Debugf("GET %s", xurl)
 	res, err := c.client.Get(xurl)
