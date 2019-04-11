@@ -174,6 +174,12 @@ func (c Client) PostLine(bookID, pageID, lineID int, cor Correction) (*Line, err
 	return &line, err
 }
 
+// DeleteLine deletes the given line.
+func (c Client) DeleteLine(bookID, pageID, lineID int) error {
+	url := c.url(linePath(bookID, pageID, lineID), Auth, c.Session.Auth)
+	return c.delete(url)
+}
+
 // GetTokens returns the tokens for the given line.
 func (c Client) GetTokens(bookID, pageID, lineID int) (Tokens, error) {
 	var tokens Tokens
@@ -355,6 +361,22 @@ func (c Client) get(url string, out interface{}) error {
 		return nil
 	}
 	return json.NewDecoder(res.Body).Decode(out)
+}
+func (c Client) delete(url string) error {
+	log.Debugf("DELETE %s", url)
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	if err != nil {
+		return err
+	}
+	res, err := c.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("bad response: %s", res.Status)
+	}
+	return nil
 }
 
 func (c Client) put(url string, data, out interface{}) error {
