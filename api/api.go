@@ -208,9 +208,9 @@ func (err ErrorResponse) Error() string {
 	return fmt.Sprintf("%s [%d %s]", err.Cause, err.StatusCode, err.Status)
 }
 
-// IsValidJSONResponse returns true if the given response matches
-// on of the given codes and if the Content-Type equals the given
-// content type.
+// IsValidJSONResponse returns true if the given response matches one
+// of the given codes and if response is either empty or its
+// Content-Type is `application/json`.
 func IsValidJSONResponse(res *http.Response, codes ...int) bool {
 	// Order matters here. Check first for the return codes.
 	var codeOK bool
@@ -223,7 +223,11 @@ func IsValidJSONResponse(res *http.Response, codes ...int) bool {
 	if !codeOK {
 		return false
 	}
-	// Then check for a matching content type.
+	// Then check if we do have any content.
+	if res.ContentLength == 0 {
+		return true
+	}
+	// Finally check for a matching content type.
 	for _, ct := range res.Header["Content-Type"] {
 		if ct == "application/json" {
 			return true
