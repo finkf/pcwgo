@@ -33,13 +33,21 @@ type Client struct {
 	Session       Session
 }
 
-// Authenticate creates a new Client from a given auth-token.
-func Authenticate(host, authToken string) *Client {
+// NewClient creates a new client with the given host (and it default
+// web host).
+func NewClient(host string) *Client {
 	return &Client{
 		Host:    host,
-		Session: Session{Auth: authToken},
+		WebHost: DefaultWebHost(host),
 		client:  &http.Client{},
 	}
+}
+
+// Authenticate creates a new Client from a given auth-token.
+func Authenticate(host, authToken string) *Client {
+	c := NewClient(host)
+	c.Session.Auth = authToken
+	return c
 }
 
 // Login creates a new Client and authenticates with the given
@@ -48,10 +56,11 @@ func Login(host, email, password string) (*Client, error) {
 	// tr := &http.Transport{
 	// 	TLSClientConfig: &tls.Config{InsecureSkipVerify: skipVerify},
 	// }
-	c := &Client{
-		client: &http.Client{}, //Transport: tr},
-		Host:   host,
-	}
+	c := NewClient(host)
+	// c := &Client{
+	// 	client: &http.Client{}, //Transport: tr},
+	// 	Host:   host,
+	// }
 	login := LoginRequest{
 		Email:    email,
 		Password: password,
