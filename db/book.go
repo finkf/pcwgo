@@ -62,6 +62,27 @@ func FindBookByID(db DB, id int) (*Book, bool, error) {
 	return &book, true, nil
 }
 
+// FindBookByProjectID loads the book from the database that is
+// identified by the given project ID.
+func FindBookByProjectID(db DB, id int) (*Book, bool, error) {
+	const stmt = "SELECT b.BookID,b.Year,b.Author,b.Title,b.Description,b.URI," +
+		"COALESCE(b.ProfilerURL, '') as ProfilerURL,b.Directory,b.Lang FROM " +
+		BooksTableName + " b JOIN " + ProjectsTableName + " p ON p.Origin=b.BookID WHERE p.ID=?"
+	rows, err := Query(db, stmt, id)
+	if err != nil {
+		return nil, false, err
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		return nil, false, nil
+	}
+	var book Book
+	if err := scanBook(rows, &book); err != nil {
+		return nil, false, err
+	}
+	return &book, true, nil
+}
+
 func scanBook(rows *sql.Rows, book *Book) error {
 	return rows.Scan(&book.BookID, &book.Year, &book.Author, &book.Title,
 		&book.Description, &book.URI, &book.ProfilerURL, &book.Directory,
