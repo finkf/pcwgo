@@ -1,5 +1,7 @@
 package db
 
+import "database/sql"
+
 const BooksTableName = "books"
 
 const booksTable = BooksTableName + "(" +
@@ -37,4 +39,30 @@ func InsertBook(db DB, book *Book) error {
 		book.Year, book.Description,
 		book.URI, book.ProfilerURL, book.Directory, book.Lang)
 	return err
+}
+
+// FindBookByID loads the book from the database that is identified by
+// the given ID.
+func FindBookByID(db DB, id int) (*Book, bool, error) {
+	const stmt = "SELECT BookID,Year,Author,Title,Description,URI,ProfilerURL,Directory,Lang FROM " +
+		BooksTableName + " WHERE BookID=?"
+	rows, err := Query(db, stmt, id)
+	if err != nil {
+		return nil, false, err
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		return nil, false, nil
+	}
+	var book Book
+	if err := scanBook(rows, &book); err != nil {
+		return nil, false, err
+	}
+	return &book, true, nil
+}
+
+func scanBook(rows *sql.Rows, book *Book) error {
+	return rows.Scan(&book.BookID, &book.Year, &book.Author, &book.Title,
+		&book.Description, &book.URI, &book.ProfilerURL, &book.Directory,
+		&book.Lang)
 }
