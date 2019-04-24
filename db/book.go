@@ -44,7 +44,8 @@ func InsertBook(db DB, book *Book) error {
 // FindBookByID loads the book from the database that is identified by
 // the given ID.
 func FindBookByID(db DB, id int) (*Book, bool, error) {
-	const stmt = "SELECT BookID,Year,Author,Title,Description,URI,ProfilerURL,Directory,Lang FROM " +
+	const stmt = "SELECT BookID,Year,Author,Title,Description,URI," +
+		"COALESCE(ProfilerURL, '') as ProfilerURL,Directory,Lang FROM " +
 		BooksTableName + " WHERE BookID=?"
 	rows, err := Query(db, stmt, id)
 	if err != nil {
