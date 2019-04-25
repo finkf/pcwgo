@@ -134,19 +134,36 @@ func CreateTableProjectPages(db DB) error {
 	return err
 }
 
+// FindBookPages returns the page IDs for the given book. 
+func FindBookPages(db DB, bookID int) ([]int, error) {
+	const stmt = "SELECT PageID FROM " + PagesTableName + " WHERE BookID=?"
+	rows, err := Query(db, stmt, bookID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return getIDs(rows)
+}
+
+// FindProjectPages returns the page IDs for the given project. 
 func FindProjectPages(db DB, projectID int) ([]int, error) {
 	const stmt = "SELECT PageID FROM " + ProjectPagesTableName + " WHERE ProjectID=?"
 	rows, err := Query(db, stmt, projectID)
 	if err != nil {
 		return nil, err
 	}
-	var pageIDs []int
+	defer rows.Close()
+	return getIDs(rows)
+}
+
+func getIDs(rows *sql.Rows) ([]int, error) {
+	var ids []int
 	for rows.Next() {
-		var pageID int
-		if err := rows.Scan(&pageID); err != nil {
+		var id int
+		if err := rows.Scan(&id); err != nil {
 			return nil, err
 		}
-		pageIDs = append(pageIDs, pageID)
+		ids = append(ids, id)
 	}
-	return pageIDs, nil
+	return ids, nil
 }
