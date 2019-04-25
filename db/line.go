@@ -179,6 +179,9 @@ func FindLineByID(db DB, bookID, pageID, lineID int) (*Line, bool, error) {
 
 	// query for contents
 	rows, err = Query(db, stmt2, bookID, pageID, lineID)
+	if err != nil {
+		return nil, false, err
+	}
 	for rows.Next() {
 		line.Chars = append(line.Chars, Char{})
 		if err := scanChar(rows, &line.Chars[len(line.Chars)-1]); err != nil {
