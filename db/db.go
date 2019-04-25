@@ -33,6 +33,7 @@ func Begin(db DB) (*sql.Tx, error) {
 	return db.Begin()
 }
 
+// Transaction wraps a sql.Tx to abbort database transactions.
 type Transaction struct {
 	tx  *sql.Tx
 	err error
@@ -59,10 +60,13 @@ func (t *Transaction) Query(stmt string, args ...interface{}) (*sql.Rows, error)
 	return t.tx.Query(stmt, args...)
 }
 
+// Begin return this transaction's Tx object with all active errors
+// encountered so far.
 func (t *Transaction) Begin() (*sql.Tx, error) {
-	return nil, fmt.Errorf("cannot call Begin() on Transaction")
+	return t.tx, t.err
 }
 
+// Do runs a function within the transaction.
 func (t *Transaction) Do(f func(DB) error) {
 	if t.err != nil {
 		return
@@ -70,6 +74,9 @@ func (t *Transaction) Do(f func(DB) error) {
 	t.err = f(t)
 }
 
+// Done commits the transaction if no error was encountered during the
+// execution.  If an error was encountered, the whole transaction is
+// rolled back.
 func (t *Transaction) Done() error {
 	if t.err == nil { // no error; commit
 		log.Debugf("commit transaction")
