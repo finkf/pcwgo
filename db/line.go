@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// TextLinesTableName defines the name of the textlines table.
 const TextLinesTableName = "textlines"
 const tableTextLines = TextLinesTableName + " (" +
 	"BookID INT REFERENCES Books(BookID)," +
@@ -18,6 +19,7 @@ const tableTextLines = TextLinesTableName + " (" +
 	"PRIMARY KEY (BookID, PageID, LineID)" +
 	");"
 
+// ContentsTableName defines the name of the contents table.
 const ContentsTableName = "contents"
 const tableContents = ContentsTableName + " (" +
 	"BookID INT REFERENCES Books(BookID)," +
@@ -38,60 +40,76 @@ type Char struct {
 	Conf     float64
 }
 
-// Line defines the line of a page in a book.
-type Line struct {
-	ImagePath                string
-	Chars                    []Char
-	LineID                   int
-	PageID                   int
-	BookID                   int
-	Left, Right, Top, Bottom int
-}
+// Chars defines a slice of characters
+type Chars []Char
 
-func (l Line) AverageConfidence() float64 {
-	sum := 0.0
-	for _, char := range l.Chars {
-		sum += char.Conf
+// AverageConfidence calculates the average confidence of the
+// character slice.
+func (cs Chars) AverageConfidence() float64 {
+	if len(cs) == 0 {
+		return 0.0
 	}
-	return sum / float64(len(l.Chars))
+	sum := 0.0
+	for _, c := range cs {
+		sum += c.Conf
+	}
+	return sum / float64(len(cs))
 }
 
-func (l Line) IsFullyCorrected() bool {
-	for _, char := range l.Chars {
-		if char.Cor == 0 {
+// IsFullyCorrected returns true if all characters in the slice have
+// been corrected.
+func (cs Chars) IsFullyCorrected() bool {
+	for _, c := range cs {
+		if c.Cor == 0 {
 			return false
 		}
 	}
 	return true
 }
 
-func (l Line) IsPartiallyCorrected() bool {
-	for _, char := range l.Chars {
-		if char.Cor != 0 {
+// IsPartiallyCorrected returns true if a part of the character slice
+// contains corrections.
+func (cs Chars) IsPartiallyCorrected() bool {
+	for _, c := range cs {
+		if c.Cor != 0 {
 			return true
 		}
 	}
 	return false
 }
 
-func (l Line) Cor() string {
+// Cor returns the corrected string.
+func (cs Chars) Cor() string {
 	var b strings.Builder
-	for _, char := range l.Chars {
-		if char.Cor != 0 {
-			b.WriteRune(char.Cor)
+	for _, c := range cs {
+		if c.Cor != 0 {
+			b.WriteRune(c.Cor)
+		} else if c.OCR != 0 {
+			b.WriteRune(c.OCR)
 		}
 	}
 	return b.String()
 }
 
-func (l Line) OCR() string {
+// OCR returns the OCR string.
+func (cs Chars) OCR() string {
 	var b strings.Builder
-	for _, char := range l.Chars {
-		if char.OCR != 0 && char.OCR != rune(-1) {
-			b.WriteRune(char.OCR)
+	for _, c := range cs {
+		if c.OCR != 0 && c.OCR != rune(-1) {
+			b.WriteRune(c.OCR)
 		}
 	}
 	return b.String()
+}
+
+// Line defines the line of a page in a book.
+type Line struct {
+	ImagePath                string
+	Chars                    Chars
+	LineID                   int
+	PageID                   int
+	BookID                   int
+	Left, Right, Top, Bottom int
 }
 
 // CreateTableLines creates the two tables needed for the storing of
@@ -106,6 +124,7 @@ func CreateTableLines(db DB) error {
 	return err
 }
 
+// InsertLine inserts the given line into the database.
 func InsertLine(db DB, line *Line) error {
 	const stmt1 = "INSERT INTO " + TextLinesTableName +
 		"(BookID,PageID,LineID,ImagePath,LLeft,LRight,LTop,LBottom) " +
@@ -129,7 +148,8 @@ func InsertLine(db DB, line *Line) error {
 	return t.Done()
 }
 
-func UpdateLine(db DB, line Line) error {
+// UpdateLine updates the contents for the given line.
+func UpdateLine(db DB, line *Line) error {
 	const stmt1 = "UPDATE " + TextLinesTableName + " SET " +
 		"ImagePath=?,LLeft=?,LRight=?,LTop=?,LBottom=? " +
 		"WHERE BookID=? AND PageID=? AND LineID=?"
@@ -154,6 +174,28 @@ func UpdateLine(db DB, line Line) error {
 	return t.Done()
 }
 
+// FindPageLines returns all line IDs for the page identified by the
+// given book and page IDs.
+func FindPageLines(db DB, bookID, pageID int) ([]int, error) {
+	const stmt = "SELECT LineID FROM " + TextLinesTableName + " WHERE bookID=? AND pageID=?"
+	rows, err := Query(db, stmt, bookID, pageID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var lineIDs []int
+	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		lineIDs = append(lineIDs, id)
+	}
+	return lineIDs, nil
+}
+
+// FindLineByID returns the line identified by the given book, page
+// and line ID.
 func FindLineByID(db DB, bookID, pageID, lineID int) (*Line, bool, error) {
 	const stmt1 = "SELECT ImagePath,LLeft,LRight,LTop,LBottom FROM " +
 		TextLinesTableName + " WHERE BookID=? AND PageID=? AND LineID=?"
@@ -182,7 +224,6 @@ func FindLineByID(db DB, bookID, pageID, lineID int) (*Line, bool, error) {
 	if err != nil {
 		return nil, false, err
 	}
-	defer rows.Close()
 	for rows.Next() {
 		line.Chars = append(line.Chars, Char{})
 		if err := scanChar(rows, &line.Chars[len(line.Chars)-1]); err != nil {
