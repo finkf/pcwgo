@@ -190,6 +190,20 @@ type Match struct {
 	Tokens []Token `json:"tokens"`
 }
 
+// Job defines job info structs.
+type Job struct {
+	JobID      int    `json:"jobId"`
+	BookID     int    `json:"bookId"`
+	StatusID   int    `json:"statusId"`
+	StatusName string `json:"statusName"`
+	Timestamp  int64  `json:"timestamp"`
+}
+
+// Time returns the time object for the job's timestamp.
+func (j Job) Time() time.Time {
+	return time.Unix(j.Timestamp, 0)
+}
+
 // NewErrorResponse creates a new ErrorResponse with
 // the given code and cause. The status text is calculated
 // automatically using http.StatusText.
