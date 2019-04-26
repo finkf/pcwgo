@@ -3,7 +3,7 @@ package db
 const PagesTableName = "pages"
 
 const pagesTable = PagesTableName + "(" +
-	"BookID INT REFERENCES Books(BookID)," +
+	"BookID INT REFERENCES " + BooksTableName + "(BookID)," +
 	"PageID INT NOT NULL," +
 	"ImagePath VARCHAR(255)," +
 	"PLeft INT," +
