@@ -78,14 +78,17 @@ func (t *Transaction) Do(f func(DB) error) {
 // execution.  If an error was encountered, the whole transaction is
 // rolled back.
 func (t *Transaction) Done() error {
-	if t.err == nil { // no error; commit
+	if t.err == nil { // no error: commit
 		log.Debugf("commit transaction")
 		if err := t.tx.Commit(); err != nil {
 			return fmt.Errorf("cannot commit transaction: %v", err)
 		}
 		return nil
 	}
-	// error; rollback
+	if t.tx == nil { // error: no valid Tx
+		return t.err
+	}
+	// error: rollback
 	log.Debugf("rollback transaction")
 	if err := t.tx.Rollback(); err != nil {
 		return fmt.Errorf("cannot rollback after error: %v: %v", t.err, err)
