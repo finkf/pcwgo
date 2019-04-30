@@ -40,28 +40,21 @@ const jobsStatusTable = JobsStatusTableName + "(" +
 // CreateTableJobs creates the jobs and jobs status database tables if
 // they do not already exist.
 func CreateTableJobs(db DB) error {
-	tx := NewTransaction(db.Begin())
-	tx.Do(func(db DB) error {
-		_, err := Exec(db, "CREATE TABLE IF NOT EXISTS "+jobsStatusTable)
+	_, err := Exec(db, "CREATE TABLE IF NOT EXISTS "+jobsStatusTable)
+	if err != nil {
 		return err
-	})
-	tx.Do(func(db DB) error {
-		const stmnt = "INSERT INTO " + JobsStatusTableName + "(StatusID,StatusName) " +
-			"VALUES (?,?),(?,?),(?,?)"
-		Exec(
-			db, stmnt,
-			StatusIDFailed, StatusFailed,
-			StatusIDRunning, StatusRunning,
-			StatusIDDone, StatusDone,
-		)
-		// ignore any errors if the values do already exist
-		return nil
-	})
-	tx.Do(func(db DB) error {
-		_, err := Exec(db, "CREATE TABLE IF NOT EXISTS "+jobsTable)
-		return err
-	})
-	return tx.Done()
+	}
+	const stmnt = "INSERT INTO " + JobsStatusTableName + "(StatusID,StatusName) " +
+		"VALUES (?,?),(?,?),(?,?)"
+	// ignore any errors if the values do already exist
+	Exec(
+		db, stmnt,
+		StatusIDFailed, StatusFailed,
+		StatusIDRunning, StatusRunning,
+		StatusIDDone, StatusDone,
+	)
+	_, err = Exec(db, "CREATE TABLE IF NOT EXISTS "+jobsTable)
+	return err
 }
 
 // NewJobID inserts a new running job into the jobs table and returns
