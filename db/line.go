@@ -33,14 +33,14 @@ const tableContents = ContentsTableName + " (" +
 	"PRIMARY KEY (BookID, PageID, LineID, Seq)" +
 	");"
 
-// Char defines a character
+// Char defines a character.
 type Char struct {
 	Cor, OCR rune
 	Cut      int
 	Conf     float64
 }
 
-// Chars defines a slice of characters
+// Chars defines a slice of characters.
 type Chars []Char
 
 // AverageConfidence calculates the average confidence of the
