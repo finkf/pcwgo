@@ -18,7 +18,7 @@ func withJobsTable(t *testing.T, f func(DB)) {
 
 func TestNewJobID(t *testing.T) {
 	withJobsTable(t, func(db DB) {
-		id, err := NewJobID(db, 1)
+		id, err := NewJob(db, 1)
 		if err != nil {
 			t.Fatalf("got error: %v", err)
 		}
@@ -30,7 +30,7 @@ func TestNewJobID(t *testing.T) {
 
 func TestFindJobByID(t *testing.T) {
 	withJobsTable(t, func(db DB) {
-		id, err := NewJobID(db, 1)
+		id, err := NewJob(db, 1)
 		if err != nil {
 			t.Fatalf("got error: %v", err)
 		}
@@ -49,7 +49,7 @@ func TestFindJobByID(t *testing.T) {
 
 func TestSetJobStatus(t *testing.T) {
 	withJobsTable(t, func(db DB) {
-		id, err := NewJobID(db, 1)
+		id, err := NewJob(db, 1)
 		if err != nil {
 			t.Fatalf("got error: %v", err)
 		}
@@ -71,7 +71,7 @@ func TestSetJobStatus(t *testing.T) {
 
 func TestDeleteJobByID(t *testing.T) {
 	withJobsTable(t, func(db DB) {
-		id, err := NewJobID(db, 1)
+		id, err := NewJob(db, 1)
 		if err != nil {
 			t.Fatalf("got error: %v", err)
 		}
