@@ -69,7 +69,8 @@ func wait() error {
 		log.Debugf("connected sucessfully to database")
 		return nil
 	}
-	return fmt.Errorf("cannot connect to database after %d attempts", MaxRetries)
+	return fmt.Errorf("failed to connect to database after %d attempts",
+		MaxRetries)
 }
 
 // Close closes the database pool.
