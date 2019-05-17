@@ -190,6 +190,21 @@ type Match struct {
 	Tokens []Token `json:"tokens"`
 }
 
+// Suggestions defines the profiler's suggestions for tokens.
+type Suggestions struct {
+	BookID      int          `json:"bookId"`
+	Suggestions []Suggestion `json:"suggestions"`
+}
+
+// Suggestion defines one suggestion of the profiler for a token.
+type Suggestion struct {
+	Token      string  `json:"token"`
+	Suggestion string  `json:"suggestion"`
+	Distance   int     `json:"distance"`
+	Weight     float64 `json:"weight"`
+	Top        bool    `json:"top"`
+}
+
 // Job defines job info structs.
 type Job struct {
 	JobID      int    `json:"jobId"`
@@ -202,6 +217,12 @@ type Job struct {
 // Time returns the time object for the job's timestamp.
 func (j Job) Time() time.Time {
 	return time.Unix(j.Timestamp, 0)
+}
+
+// Languages defines the object that contains the profiler's
+// configured languages.
+type Languages struct {
+	Languages []string `json:"languages"`
 }
 
 // NewErrorResponse creates a new ErrorResponse with
