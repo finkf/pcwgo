@@ -15,16 +15,15 @@ var (
 	p1, p2, p3 *Project
 )
 
-func newTestProject(t *testing.T, db DB, id int, user *api.User) *Project {
+func newTestProject(t *testing.T, db DB, id int, book *Book, user *api.User) *Project {
 	if user == nil {
 		user = newTestUser(t, db, id)
 	}
 	project := &Project{
-		Owner:  *user,
-		Origin: int64(id),
-		Pages:  1,
+		Owner: *user,
+		Book:  *book,
+		Pages: 1,
 	}
-
 	if err := InsertProject(db, project); err != nil {
 		t.Fatalf("got error: %v", err)
 	}
@@ -39,12 +38,16 @@ func withProjectDB(t *testing.T, f func(*sql.DB)) {
 		if err := CreateTableProjects(db); err != nil {
 			t.Fatalf("got error: %v", err)
 		}
+		if err := CreateTableBooks(db); err != nil {
+			t.Fatalf("got error: %v", err)
+		}
+		b := newTestBook(t, db, 1)
 		u1 = newTestUser(t, db, 1)
 		u2 = newTestUser(t, db, 2)
 		u3 = newTestUser(t, db, 3)
-		p1 = newTestProject(t, db, 1, u1)
-		p2 = newTestProject(t, db, 2, u1)
-		p3 = newTestProject(t, db, 3, u2)
+		p1 = newTestProject(t, db, 1, b, u1)
+		p2 = newTestProject(t, db, 2, b, u1)
+		p3 = newTestProject(t, db, 3, b, u2)
 		f(db)
 	})
 }
@@ -52,14 +55,14 @@ func withProjectDB(t *testing.T, f func(*sql.DB)) {
 func TestFindProjectByID(t *testing.T) {
 	withProjectDB(t, func(db *sql.DB) {
 		tests := []struct {
-			id    int64
+			id    int
 			want  *Project
 			found bool
 		}{
-			{p1.ID, p1, true},
-			{p2.ID, p2, true},
-			{p3.ID, p3, true},
-			{p3.ID + 1, &Project{}, false},
+			{p1.ProjectID, p1, true},
+			{p2.ProjectID, p2, true},
+			{p3.ProjectID, p3, true},
+			{p3.ProjectID + 1, &Project{}, false},
 		}
 		for _, tc := range tests {
 			t.Run(strconv.Itoa(int(tc.id)), func(t *testing.T) {
@@ -71,7 +74,8 @@ func TestFindProjectByID(t *testing.T) {
 					t.Fatalf("expected found: %t; got %t", tc.found, found)
 				}
 				if tc.found && got.String() != tc.want.String() {
-					t.Fatalf("epected project: %s; got %s", got.String(), tc.want.String())
+					t.Fatalf("epected project: %s; got %s",
+						got.String(), tc.want.String())
 				}
 			})
 		}

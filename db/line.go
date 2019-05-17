@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"strings"
+	"unicode"
 )
 
 // TextLinesTableName defines the name of the textlines table.
@@ -100,6 +101,33 @@ func (cs Chars) OCR() string {
 		}
 	}
 	return b.String()
+}
+
+func issep(char Char) bool {
+	c := char.Cor
+	if c == 0 {
+		c = char.OCR
+	}
+	return unicode.IsSpace(c) || unicode.IsPunct(c)
+}
+
+// NextWord returns the next word and the rest in this character
+// sequence.  A word is any sequnce of non whitespace non punctuation
+// characters.
+func (cs Chars) NextWord() (word, rest Chars) {
+	for len(cs) > 0 && issep(cs[0]) {
+		cs = cs[1:]
+	}
+	if len(cs) == 0 {
+		return nil, nil
+	}
+	i := 1
+	for ; i < len(cs); i++ {
+		if issep(cs[i]) {
+			break
+		}
+	}
+	return cs[:i], cs[i:]
 }
 
 // Line defines the line of a page in a book.
