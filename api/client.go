@@ -81,6 +81,11 @@ func (c Client) getLogin() (Session, error) {
 	return s, err
 }
 
+// Logout logs the user out.
+func (c Client) Logout() error {
+	return c.get(c.url("/logout", Auth, c.Session.Auth), nil)
+}
+
 // GetUsers returns all users (needs admin rights).
 func (c Client) GetUsers() (Users, error) {
 	var res Users
