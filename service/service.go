@@ -99,7 +99,7 @@ type HandlerFunc func(http.ResponseWriter, *http.Request, *Data)
 // WithProject loads the book data of the given book id in the url and
 // calls the given callback function.
 func WithProject(f HandlerFunc) HandlerFunc {
-	re := regexp.MustCompile(`/books/(\d+)[^/]*$`)
+	re := regexp.MustCompile(`/books/(\d+)`)
 	return func(w http.ResponseWriter, r *http.Request, d *Data) {
 		var id int
 		if err := ParseIDs(r.URL.String(), re, &id); err != nil {
