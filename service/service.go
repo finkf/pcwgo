@@ -144,7 +144,8 @@ func WithMethods(args ...interface{}) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		f, ok := methods[r.Method]
 		if !ok {
-			ErrorResponse(w, http.StatusBadRequest, "invalid method: %s", r.Method)
+			ErrorResponse(w, http.StatusMethodNotAllowed,
+				"invalid method: %s", r.Method)
 			return
 		}
 		f(w, r, &Data{})
