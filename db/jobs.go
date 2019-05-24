@@ -11,48 +11,55 @@ const (
 	StatusIDFailed = iota
 	StatusIDRunning
 	StatusIDDone
+	StatusIDEmpty
+	StatusIDProfiled
+	StatusIDPostCorrected
 )
 
 // Status names
 const (
-	StatusFailed  = "failed"
-	StatusRunning = "running"
-	StatusDone    = "done"
+	StatusFailed        = "failed"
+	StatusRunning       = "running"
+	StatusDone          = "done"
+	StatusEmpty         = "empty"
+	StatusProfiled      = "profiled"
+	StatusPostCorrected = "post-corrected"
 )
 
 // JobsTableName defines the name of the jobs table.
 const JobsTableName = "jobs"
 
 const jobsTable = JobsTableName + "(" +
-	"JobID INTEGER NOT NULL PRIMARY KEY UNIQUE REFERENCES " + BooksTableName + "(BooksID)," +
-	"StatusID INTEGER NOT NULL REFERENCES " + JobsStatusTableName + "(StatusID)," +
+	"id INTEGER NOT NULL PRIMARY KEY UNIQUE REFERENCES " + BooksTableName + "(BooksID)," +
+	"StatusID INTEGER NOT NULL REFERENCES " + JobsTableName + "(id)," +
 	"Timestamp INT(11) NOT NULL" +
 	");"
 
-// JobsStatusTableName defines the name of the jobs status table.
-const JobsStatusTableName = "jobs_status"
+// StatusTableName defines the name of the jobs status table.
+const StatusTableName = "status"
 
-const jobsStatusTable = JobsStatusTableName + "(" +
-	"StatusID INTEGER NOT NULL PRIMARY KEY," +
-	"StatusName VARCHAR(10) NOT NULL" +
+const statusTable = StatusTableName + "(" +
+	"id INTEGER NOT NULL PRIMARY KEY," +
+	"text VARCHAR(15) NOT NULL" +
 	");"
 
 // CreateTableJobs creates the jobs and jobs status database tables if
 // they do not already exist.
 func CreateTableJobs(db DB) error {
-	_, err := Exec(db, "CREATE TABLE IF NOT EXISTS "+jobsStatusTable)
+	_, err := Exec(db, "CREATE TABLE IF NOT EXISTS "+statusTable)
 	if err != nil {
 		return err
 	}
-	const stmnt = "INSERT INTO " + JobsStatusTableName + "(StatusID,StatusName) " +
-		"VALUES (?,?),(?,?),(?,?)"
-	// ignore any errors if the values do already exist
-	Exec(
-		db, stmnt,
+	stmt := "INSERT INTO status (id,text) VALUES " +
+		"(?,?),(?,?),(?,?),(?,?),(?,?),(?,?)"
+	// insert and ignore any errors
+	Exec(db, stmt,
 		StatusIDFailed, StatusFailed,
-		StatusIDRunning, StatusRunning,
 		StatusIDDone, StatusDone,
-	)
+		StatusIDRunning, StatusRunning,
+		StatusIDProfiled, StatusProfiled,
+		StatusIDEmpty, StatusEmpty,
+		StatusIDPostCorrected, StatusPostCorrected)
 	_, err = Exec(db, "CREATE TABLE IF NOT EXISTS "+jobsTable)
 	return err
 }
@@ -60,7 +67,7 @@ func CreateTableJobs(db DB) error {
 // NewJob inserts a new running job into the jobs table and returns
 // the new job ID.
 func NewJob(db DB, bookID int) (int, error) {
-	const stmnt = "INSERT INTO " + JobsTableName + "(JobID,StatusID,Timestamp) VALUES (?,?,?)"
+	const stmnt = "INSERT INTO " + JobsTableName + "(id,statusid,timestamp) VALUES (?,?,?)"
 	// ts := time.Now().Unix()
 	_, err := Exec(db, stmnt, bookID, StatusIDRunning, time.Now().Unix())
 	return bookID, err // book and job IDs are the same
@@ -68,7 +75,7 @@ func NewJob(db DB, bookID int) (int, error) {
 
 // SetJobStatus sets a new status for a job.
 func SetJobStatus(db DB, jobID, statusID int) error {
-	const stmnt = "UPDATE " + JobsTableName + " SET StatusID=?,Timestamp=? WHERE JobID=?"
+	const stmnt = "UPDATE " + JobsTableName + " SET StatusID=?,Timestamp=? WHERE id=?"
 	// ts := time.Now().Unix()
 	_, err := Exec(db, stmnt, statusID, time.Now().Unix(), jobID)
 	return err
@@ -76,9 +83,9 @@ func SetJobStatus(db DB, jobID, statusID int) error {
 
 // FindJobByID returns the given job
 func FindJobByID(db DB, jobID int) (*api.Job, bool, error) {
-	const stmnt = "SELECT j.JobID,j.Timestamp,j.StatusID,js.StatusName " +
-		"FROM " + JobsTableName + " AS j JOIN " + JobsStatusTableName + " js " +
-		"ON j.StatusID = js.StatusID WHERE j.JobID=?"
+	const stmnt = "SELECT j.id,j.Timestamp,j.StatusID,s.Text " +
+		"FROM " + JobsTableName + " AS j JOIN " + StatusTableName + " s " +
+		"ON j.statusid = s.id WHERE j.id=?"
 	rows, err := Query(db, stmnt, jobID)
 	if err != nil {
 		return nil, false, err
@@ -97,7 +104,7 @@ func FindJobByID(db DB, jobID int) (*api.Job, bool, error) {
 
 // DeleteJobByID delete the given job from the database table.
 func DeleteJobByID(db DB, jobID int) error {
-	const stmnt = "DELETE FROM " + JobsTableName + " WHERE JobID=?"
+	const stmnt = "DELETE FROM " + JobsTableName + " WHERE id=?"
 	_, err := Exec(db, stmnt, jobID)
 	return err
 }

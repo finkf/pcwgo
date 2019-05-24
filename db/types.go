@@ -38,7 +38,8 @@ func NewType(db DB, str string, ids map[string]int) (int, error) {
 		return id, nil
 	}
 	// check if type is already in the database and return it
-	stmt1 := "SELECT ID FROM " + TypesTableName + " WHERE " + TypesTableType + "=?"
+	stmt1 := "SELECT ID FROM " + TypesTableName +
+		" WHERE " + TypesTableType + "=?"
 	rows, err := Query(db, stmt1, str)
 	if err != nil {
 		return 0, err
@@ -55,7 +56,9 @@ func NewType(db DB, str string, ids map[string]int) (int, error) {
 		return id, nil
 	}
 	// insert new type into the database
-	stmt2 := "INSERT INTO " + TypesTableName + "(" + TypesTableType + ") VALUES (?)"
+	stmt2 := "INSERT INTO " + TypesTableName +
+		" (" + TypesTableType + ") " +
+		"VALUES (?)"
 	res, err := Exec(db, stmt2, str)
 	if err != nil {
 		return 0, err
@@ -65,4 +68,35 @@ func NewType(db DB, str string, ids map[string]int) (int, error) {
 		ids[str] = int(id)
 	}
 	return int(id), err
+}
+
+const (
+	SuggestionsTableName             = "suggestions"
+	SuggestionsTableID               = "id"
+	SuggestionsTableBookID           = "bookid"
+	SuggestionsTableTokenTypeID      = "tokentypid"
+	SuggestionsTableSuggestionTypeID = "suggestiontypid"
+	SuggestionsTableModernTypeID     = "moderntypid"
+	SuggestionsTableDict             = "dict"
+	SuggestionsTableWeight           = "weight"
+	SuggestionsTableTopSuggestion    = "topsuggestion"
+	SuggestionsTableDistance         = "distance"
+)
+
+var suggestionsTable = SuggestionsTableName + "(" +
+	SuggestionsTableID + " int not null unique primary key auto_increment," +
+	SuggestionsTableBookID + " int references books(bookid)," +
+	SuggestionsTableTokenTypeID + " int references types(id)," +
+	SuggestionsTableSuggestionTypeID + " int references types(id)," +
+	SuggestionsTableModernTypeID + " int references types(id)," +
+	SuggestionsTableDict + " varchar(50) not null," +
+	SuggestionsTableWeight + " double not null," +
+	SuggestionsTableDistance + " int not null," +
+	SuggestionsTableTopSuggestion + " boolean not null," +
+	");"
+
+// CreateTableSuggestions creates the suggestion table.
+func CreateTableSuggestions(db DB) error {
+	_, err := Exec(db, "CREATE TABLE IF NOT EXISTS "+suggestionsTable)
+	return err
 }

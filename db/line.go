@@ -72,7 +72,7 @@ func (cs Chars) IsFullyCorrected() bool {
 // contains corrections.
 func (cs Chars) IsPartiallyCorrected() bool {
 	for _, c := range cs {
-		if c.Cor != 0 {
+		if c.Cor != 0 || c.Cor == -1 {
 			return true
 		}
 	}
@@ -83,9 +83,9 @@ func (cs Chars) IsPartiallyCorrected() bool {
 func (cs Chars) Cor() string {
 	var b strings.Builder
 	for _, c := range cs {
-		if c.Cor != 0 {
+		if c.Cor != 0 && c.Cor != -1 {
 			b.WriteRune(c.Cor)
-		} else if c.OCR != 0 {
+		} else if c.Cor != -1 && c.OCR != 0 {
 			b.WriteRune(c.OCR)
 		}
 	}
@@ -108,11 +108,12 @@ func issep(char Char) bool {
 	if c == 0 {
 		c = char.OCR
 	}
-	return unicode.IsSpace(c) || unicode.IsPunct(c)
+	// a deletion (cor = -1, ocr = char) is not a sep
+	return c != -1 && (unicode.IsSpace(c) || unicode.IsPunct(c))
 }
 
 // NextWord returns the next word and the rest in this character
-// sequence.  A word is any sequnce of non whitespace non punctuation
+// sequence.  A word is any sequence of non whitespace non punctuation
 // characters.
 func (cs Chars) NextWord() (word, rest Chars) {
 	for len(cs) > 0 && issep(cs[0]) {
