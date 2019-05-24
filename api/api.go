@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/finkf/gofiler"
 )
 
 const (
@@ -102,9 +104,11 @@ type Book struct {
 	Author      string `json:"author"`
 	Title       string `json:"title"`
 	Language    string `json:"language"`
+	Status      string `json:"status"`
 	ProfilerURL string `json:"profilerUrl"`
 	Description string `json:"description"`
 	Year        int    `json:"year"`
+	BookID      int    `json:"bookId"`
 	ProjectID   int    `json:"projectId"`
 	Pages       int    `json:"pages"`
 	PageIDs     []int  `json:"pageIds"`
@@ -120,6 +124,7 @@ type Books struct {
 type Page struct {
 	PageID    int    `json:"pageId"`
 	ProjectID int    `json:"projectId"`
+	BookID    int    `json:"bookId"`
 	OCRFile   string `json:"ocrFile"`
 	ImgFile   string `json:"imgFile"`
 	Box       Box    `json:"box"`
@@ -134,6 +139,7 @@ type Line struct {
 	LineID               int       `json:"lineId"`
 	PageID               int       `json:"pageId"`
 	ProjectID            int       `json:"projectId"`
+	BookID               int       `json:"bookId"`
 	Cuts                 []int     `json:"cuts"`
 	Confidences          []float64 `json:"confidences"`
 	AverageConfidence    float64   `json:"averageConfidence"`
@@ -150,6 +156,7 @@ type Token struct {
 	LineID               int       `json:"lineId"`
 	PageID               int       `json:"pageId"`
 	ProjectID            int       `json:"projectId"`
+	BookID               int       `json:"bookId"`
 	Offset               int       `json:"offset"`
 	Cuts                 []int     `json:"cuts"`
 	Confidences          []float64 `json:"confidences"`
@@ -177,11 +184,10 @@ type Box struct {
 
 // SearchResults defines the results for token searches.
 type SearchResults struct {
-	ProejctID      int     `json:"projectId"`
-	NLines         int     `json:"nLines"`
-	Matches        []Match `json:"matches"`
-	Query          string  `json:"query"`
-	IsErrorPattern bool    `json:"isErrorPattern"`
+	Matches        map[string][]Match `json:"matches"`
+	BookID         int                `json:"bookId"`
+	ProjectID      int                `json:"projectId"`
+	IsErrorPattern bool               `json:"isErrorPattern"`
 }
 
 // Match defines the matches in the results of searches.
@@ -190,19 +196,61 @@ type Match struct {
 	Tokens []Token `json:"tokens"`
 }
 
+// Profile is gofiler.Profile wrapped with accordant book ID.  There
+// is no ProjectID, because the profile is global for each projects of
+// any given book.
+type Profile struct {
+	gofiler.Profile
+	BookID int `json:"bookId"`
+}
+
 // Suggestions defines the profiler's suggestions for tokens.
 type Suggestions struct {
-	BookID      int          `json:"bookId"`
-	Suggestions []Suggestion `json:"suggestions"`
+	Suggestions map[string][]Suggestion `json:"suggestions"`
+	BookID      int                     `json:"bookId"`
+	ProjectID   int                     `json:"projectId"`
+}
+
+// SuggestionCounts holds the counts of correction suggestions.
+type SuggestionCounts struct {
+	Counts    map[string]int `json:"counts"`
+	BookID    int            `json:"bookId"`
+	ProjectID int            `json:"projectId"`
 }
 
 // Suggestion defines one suggestion of the profiler for a token.
 type Suggestion struct {
 	Token      string  `json:"token"`
 	Suggestion string  `json:"suggestion"`
+	Modern     string  `json:"modern"`
+	Dict       string  `json:"dict"`
 	Distance   int     `json:"distance"`
+	ID         int     `json:"id"`
 	Weight     float64 `json:"weight"`
 	Top        bool    `json:"top"`
+}
+
+// PatternCounts holds the pattern counts for error patterns.
+type PatternCounts struct {
+	Counts    map[string]int `json:"counts"`
+	BookID    int            `json:"bookId"`
+	ProjectID int            `json:"projectId"`
+	OCR       bool           `json:"ocr"`
+}
+
+// Patterns holds patterns.
+type Patterns struct {
+	Patterns  map[string][]Suggestion `json:"patterns"`
+	BookID    int                     `json:"bookId"`
+	ProjectID int                     `json:"projectId"`
+	OCR       bool                    `json:"ocr"`
+}
+
+// AdaptiveTokens holds a list of adaptive tokens.
+type AdaptiveTokens struct {
+	BookID         int      `json:"bookId"`
+	ProjectID      int      `json:"projectId"`
+	AdaptiveTokens []string `json:"adaptiveTokens"`
 }
 
 // Job defines job info structs.
@@ -223,6 +271,13 @@ func (j Job) Time() time.Time {
 // configured languages.
 type Languages struct {
 	Languages []string `json:"languages"`
+}
+
+// Error defines json-formatted error responses.
+type Error struct {
+	Code    int    `json:"code"`
+	Status  string `json:"status"`
+	Message string `json:"message"`
 }
 
 // NewErrorResponse creates a new ErrorResponse with

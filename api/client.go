@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"image"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -30,7 +32,8 @@ func DefaultWebHost(host string) string {
 type Client struct {
 	client        *http.Client
 	Host, WebHost string
-	Session       Session
+	Session       Session // active session
+	Skip, Max     int     // skip and max parameters for queries
 }
 
 // NewClient creates a new client with the given host (and it default
@@ -207,16 +210,38 @@ func (c Client) PostToken(bookID, pageID, lineID, tokenID int, cor Correction) (
 	return &token, err
 }
 
-// Search searches for tokens or error patterns.
-func (c Client) Search(bookID int, query string, errorPattern bool) (*SearchResults, error) {
-	p := "0"
-	if errorPattern {
-		p = "1"
+// Search searches for one or more tokens.
+func (c Client) Search(bookID int, q string, qs ...string) (*SearchResults, error) {
+	params := []string{Auth, c.Session.Auth, "p", "0",
+		"skip", strconv.Itoa(c.Skip), "max", strconv.Itoa(c.Max), "q", q}
+	for _, x := range qs {
+		params = append(params, "q", x)
 	}
-	url := c.url(bookPath(bookID)+"/search", "q", query, "p", p, Auth, c.Session.Auth)
+	url := c.url(bookPath(bookID)+"/search", params...)
 	var res SearchResults
 	err := c.get(url, &res)
 	return &res, err
+}
+
+// SearchErrorPatterns searches for one or more error patterns.
+func (c Client) SearchErrorPatterns(bookID int, q string, qs ...string) (*SearchResults, error) {
+	params := []string{Auth, c.Session.Auth, "p", "1",
+		"skip", strconv.Itoa(c.Skip), "max", strconv.Itoa(c.Max), "q", q}
+	for _, x := range qs {
+		params = append(params, "q", x)
+	}
+	url := c.url(bookPath(bookID)+"/search", params...)
+	var res SearchResults
+	err := c.get(url, &res)
+	return &res, err
+}
+
+// GetAdaptiveTokens returns the adaptive tokens for the given book.
+func (c Client) GetAdaptiveTokens(bookID int) (AdaptiveTokens, error) {
+	url := c.url("/profile/adaptive/"+bookPath(bookID), Auth, c.Session.Auth)
+	var res AdaptiveTokens
+	err := c.get(url, &res)
+	return res, err
 }
 
 // Split splits a project.
@@ -246,8 +271,58 @@ func (c Client) Finish(pid int) error {
 
 // PostProfile sends a request to profile the book with the given id.
 func (c Client) PostProfile(bookID int) error {
-	url := c.url(bookPath(bookID)+"/profile", Auth, c.Session.Auth)
+	url := c.url("/profile"+bookPath(bookID), Auth, c.Session.Auth)
 	return c.post(url, nil, nil)
+}
+
+func (c Client) GetJobStatus(jobID int) (*Job, error) {
+	url := c.url("/profile"+jobPath(jobID), Auth, c.Session.Auth)
+	var job Job
+	return &job, c.get(url, &job)
+}
+
+// GetProfile downloads the profile for the given book.
+func (c Client) GetProfile(bookID int) (Profile, error) {
+	url := c.url("/profile"+bookPath(bookID), Auth, c.Session.Auth)
+	var profile Profile
+	return profile, c.get(url, &profile)
+}
+
+// QueryProfile returns the suggestions for the given words.
+func (c Client) QueryProfile(bookID int, q string, qs ...string) (Suggestions, error) {
+	params := []string{Auth, c.Session.Auth, "q", q}
+	for _, x := range qs {
+		params = append(params, "q", x)
+	}
+	url := c.url("/profile"+bookPath(bookID), params...)
+	var suggestions Suggestions
+	return suggestions, c.get(url, &suggestions)
+}
+
+// GetPatterns returns the ocr or hist error-patterns for the given book.
+func (c Client) GetPatterns(bookID int, ocr bool) (PatternCounts, error) {
+	params := []string{Auth, c.Session.Auth, "ocr", strconv.FormatBool(ocr)}
+	url := c.url("/profile/patterns"+bookPath(bookID), params...)
+	var patterns PatternCounts
+	return patterns, c.get(url, &patterns)
+}
+
+// QueryPatterns returns the suggestions for the given error patterns.
+func (c Client) QueryPatterns(bookID int, ocr bool, q string, qs ...string) (Patterns, error) {
+	params := []string{Auth, c.Session.Auth, "ocr", strconv.FormatBool(ocr), "q", q}
+	for _, x := range qs {
+		params = append(params, "q", x)
+	}
+	url := c.url("/profile/patterns"+bookPath(bookID), params...)
+	var patterns Patterns
+	return patterns, c.get(url, &patterns)
+}
+
+// GetSuspicious returns the suspicious words for the given book.
+func (c Client) GetSuspicious(bookID int) (SuggestionCounts, error) {
+	url := c.url("/profile/suspicious"+bookPath(bookID), Auth, c.Session.Auth)
+	var counts SuggestionCounts
+	return counts, c.get(url, &counts)
 }
 
 // Raw sends a get request to the given path and writes the raw
@@ -339,6 +414,10 @@ func bookPath(id int) string {
 	return formatID("/books/%d", id)
 }
 
+func jobPath(id int) string {
+	return formatID("/jobs/%d", id)
+}
+
 func pagePath(id, pageid int) string {
 	return formatID("/books/%d/pages/%d", id, pageid)
 }
@@ -363,16 +442,33 @@ func (c Client) get(url string, out interface{}) error {
 		return err
 	}
 	defer res.Body.Close()
-	if !IsValidJSONResponse(res, http.StatusOK) {
-		return fmt.Errorf("bad response: %s [Content-Type: %s]",
-			res.Status, res.Header.Get("Content-Type"))
+	if !valid(res) {
+		return doError(res)
 	}
 	log.Debugf("reponse from server: %s", res.Status)
 	if out == nil {
 		return nil
 	}
-	return json.NewDecoder(res.Body).Decode(out)
+	return decodeJSONMaybeGzipped(res, out)
 }
+
+func decodeJSONMaybeGzipped(res *http.Response, out interface{}) error {
+	var r io.Reader = res.Body
+	if res.Header.Get("Content-Encoding") == "gzip" {
+		log.Debugf("unzipping content")
+		gzip, err := gzip.NewReader(r)
+		if err != nil {
+			return err
+		}
+		r = gzip
+	}
+	err := json.NewDecoder(r).Decode(out)
+	if err != nil {
+		return fmt.Errorf("cannot decode server response: %v", err)
+	}
+	return nil
+}
+
 func (c Client) delete(url string) error {
 	log.Debugf("DELETE %s", url)
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
@@ -408,9 +504,8 @@ func (c Client) put(url string, data, out interface{}) error {
 		return err
 	}
 	defer res.Body.Close()
-	if !IsValidJSONResponse(res, http.StatusOK) {
-		return fmt.Errorf("bad response: %s [Content-Type: %s]",
-			res.Status, res.Header.Get("Content-Type"))
+	if !valid(res) {
+		return doError(res)
 	}
 	log.Debugf("reponse from server: %s", res.Status)
 	return json.NewDecoder(res.Body).Decode(out)
@@ -438,10 +533,22 @@ func (c Client) doPost(url, ct string, r io.Reader, out interface{}) error {
 	if out == nil {
 		return nil
 	}
-	if !IsValidJSONResponse(res, http.StatusOK, http.StatusCreated) {
-		return fmt.Errorf("bad response: %s [Content-Type: %s]",
-			res.Status, res.Header.Get("Content-Type"))
+	if !valid(res) {
+		return doError(res)
 	}
 	log.Debugf("reponse from server: %s", res.Status)
 	return json.NewDecoder(res.Body).Decode(out)
+}
+
+func doError(res *http.Response) error {
+	var ex Error
+	if err := json.NewDecoder(res.Body).Decode(&ex); err != nil {
+		return fmt.Errorf("bad response: %s", res.Status)
+	}
+	return fmt.Errorf("bad response: %d %s: %s", ex.Code, ex.Status, ex.Message)
+}
+
+func valid(res *http.Response) bool {
+	return res.StatusCode >= http.StatusOK &&
+		res.StatusCode < http.StatusMultipleChoices
 }
