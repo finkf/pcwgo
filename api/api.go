@@ -122,13 +122,15 @@ type Books struct {
 
 // Page defines a page in a book.
 type Page struct {
-	PageID    int    `json:"pageId"`
-	ProjectID int    `json:"projectId"`
-	BookID    int    `json:"bookId"`
-	OCRFile   string `json:"ocrFile"`
-	ImgFile   string `json:"imgFile"`
-	Box       Box    `json:"box"`
-	Lines     []Line `json:"lines"`
+	PageID     int    `json:"pageId"`
+	ProjectID  int    `json:"projectId"`
+	BookID     int    `json:"bookId"`
+	PrevPageKD int    `json:"prevPageId"`
+	NextPageKD int    `json:"nextPageId"`
+	OCRFile    string `json:"ocrFile"`
+	ImgFile    string `json:"imgFile"`
+	Box        Box    `json:"box"`
+	Lines      []Line `json:"lines"`
 }
 
 // Line defines the line of a page in a book.
