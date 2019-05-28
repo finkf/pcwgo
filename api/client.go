@@ -529,14 +529,14 @@ func (c Client) doPost(url, ct string, r io.Reader, out interface{}) error {
 		return err
 	}
 	defer res.Body.Close()
-	// Requests that do not expect any data can set out = nil.
-	if out == nil {
-		return nil
-	}
 	if !valid(res) {
 		return doError(res)
 	}
 	log.Debugf("reponse from server: %s", res.Status)
+	// Requests that do not expect any data can set out = nil.
+	if out == nil {
+		return nil
+	}
 	return json.NewDecoder(res.Body).Decode(out)
 }
 
