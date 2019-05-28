@@ -12,6 +12,7 @@ import (
 	"github.com/bluele/gcache"
 	"github.com/finkf/pcwgo/api"
 	"github.com/finkf/pcwgo/db"
+	_ "github.com/go-sql-driver/mysql"
 	log "github.com/sirupsen/logrus"
 )
 
