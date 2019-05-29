@@ -3,10 +3,10 @@ package service
 import (
 	"errors"
 
-	"github.com/apex/log"
 	"github.com/bluele/gcache"
 	"github.com/finkf/pcwgo/api"
 	"github.com/finkf/pcwgo/db"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
