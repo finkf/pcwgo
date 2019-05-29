@@ -96,15 +96,15 @@ func Start(ctx context.Context, bookID int, f Func) (int, error) {
 // Job returns information about the job with the given id.  If the
 // job cannot be found or if any other error occurs, a job with
 // db.StatusFailed is returned.
-func Job(id int) *api.Job {
+func Job(id int) *api.JobStatus {
 	job, ok, err := db.FindJobByID(js.db, id)
 	if err != nil {
 		log.Infof("cannot query for job id %d: %v", id, err)
-		return &api.Job{StatusID: db.StatusIDFailed, StatusName: db.StatusFailed}
+		return &api.JobStatus{StatusID: db.StatusIDFailed, StatusName: db.StatusFailed}
 	}
 	if !ok {
 		log.Infof("cannot query for job id %d: no such job id", id)
-		return &api.Job{StatusID: db.StatusIDFailed, StatusName: db.StatusFailed}
+		return &api.JobStatus{StatusID: db.StatusIDFailed, StatusName: db.StatusFailed}
 	}
 	return job
 }

@@ -7,11 +7,10 @@ import (
 	"testing"
 
 	"github.com/finkf/pcwgo/db/sqlite"
-	log "github.com/sirupsen/logrus"
 )
 
 func Test(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
+	// log.SetLevel(log.DebugLevel)
 	// var done, failed int
 	sqlite.With("jobs.sqlite", func(dtb *sql.DB) {
 		if err := Init(dtb); err != nil {
