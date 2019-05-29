@@ -42,6 +42,7 @@ func getCachedProject(id int) (*db.Project, bool, error) {
 	if err != nil {
 		return nil, false, err
 	}
+	log.Debugf("cache: returning project id: %d", id)
 	return p.(*db.Project), true, nil
 }
 
@@ -66,6 +67,7 @@ func getCachedSession(id string) (*api.Session, bool, error) {
 	if err != nil {
 		return nil, false, err
 	}
+	log.Debugf("cache: returning session id: %s", id)
 	return s.(*api.Session), true, nil
 }
 
