@@ -255,8 +255,19 @@ type AdaptiveTokens struct {
 	AdaptiveTokens []string `json:"adaptiveTokens"`
 }
 
-// Job defines job info structs.
+type ExtendedLexicon struct {
+	BookID        int            `json:"bookId"`
+	Considered    map[string]int `json:"considered"`
+	NotConsidered map[string]int `json:"notConsidered"`
+}
+
+// Job defines the job struct.
 type Job struct {
+	ID int `json:"id"`
+}
+
+// JobStatus defines the job status struct.
+type JobStatus struct {
 	JobID      int    `json:"jobId"`
 	BookID     int    `json:"bookId"`
 	StatusID   int    `json:"statusId"`
@@ -265,8 +276,8 @@ type Job struct {
 }
 
 // Time returns the time object for the job's timestamp.
-func (j Job) Time() time.Time {
-	return time.Unix(j.Timestamp, 0)
+func (js JobStatus) Time() time.Time {
+	return time.Unix(js.Timestamp, 0)
 }
 
 // Languages defines the object that contains the profiler's

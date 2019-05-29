@@ -270,14 +270,15 @@ func (c Client) Finish(pid int) error {
 }
 
 // PostProfile sends a request to profile the book with the given id.
-func (c Client) PostProfile(bookID int) error {
+func (c Client) PostProfile(bookID int) (Job, error) {
 	url := c.url("/profile"+bookPath(bookID), Auth, c.Session.Auth)
-	return c.post(url, nil, nil)
+	var job Job
+	return job, c.post(url, nil, &job)
 }
 
-func (c Client) GetJobStatus(jobID int) (*Job, error) {
-	url := c.url("/profile"+jobPath(jobID), Auth, c.Session.Auth)
-	var job Job
+func (c Client) GetJobStatus(jobID int) (*JobStatus, error) {
+	url := c.url(jobPath(jobID), Auth, c.Session.Auth)
+	var job JobStatus
 	return &job, c.get(url, &job)
 }
 
@@ -323,6 +324,18 @@ func (c Client) GetSuspicious(bookID int) (SuggestionCounts, error) {
 	url := c.url("/profile/suspicious"+bookPath(bookID), Auth, c.Session.Auth)
 	var counts SuggestionCounts
 	return counts, c.get(url, &counts)
+}
+
+func (c Client) PostExtendedLexicon(bookID int) (Job, error) {
+	url := c.url("/postcorrect/el"+bookPath(bookID), Auth, c.Session.Auth)
+	var job Job
+	return job, c.post(url, nil, &job)
+}
+
+func (c Client) GetExtendedLexicon(bookID int) (ExtendedLexicon, error) {
+	url := c.url("/postcorrect/el"+bookPath(bookID), Auth, c.Session.Auth)
+	var el ExtendedLexicon
+	return el, c.get(url, &el)
 }
 
 // Raw sends a get request to the given path and writes the raw
