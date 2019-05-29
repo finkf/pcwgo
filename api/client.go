@@ -276,6 +276,7 @@ func (c Client) PostProfile(bookID int) (Job, error) {
 	return job, c.post(url, nil, &job)
 }
 
+// GetJobStatus returns the job status for the given job.
 func (c Client) GetJobStatus(jobID int) (*JobStatus, error) {
 	url := c.url(jobPath(jobID), Auth, c.Session.Auth)
 	var job JobStatus
@@ -326,12 +327,16 @@ func (c Client) GetSuspicious(bookID int) (SuggestionCounts, error) {
 	return counts, c.get(url, &counts)
 }
 
+// PostExtendendLexicon sends a request to create the extendedn
+// lexicon for the given book or project.
 func (c Client) PostExtendedLexicon(bookID int) (Job, error) {
 	url := c.url("/postcorrect/el"+bookPath(bookID), Auth, c.Session.Auth)
 	var job Job
 	return job, c.post(url, nil, &job)
 }
 
+// GetExtendendLexicon returns the extended lexicon for the given book
+// or project.
 func (c Client) GetExtendedLexicon(bookID int) (ExtendedLexicon, error) {
 	url := c.url("/postcorrect/el"+bookPath(bookID), Auth, c.Session.Auth)
 	var el ExtendedLexicon
