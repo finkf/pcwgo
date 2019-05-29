@@ -7,6 +7,7 @@ require (
 	github.com/bluele/gcache v0.0.0-20190518031135-bc40bd653833
 	github.com/finkf/pcwgo/api v0.6.2
 	github.com/finkf/pcwgo/db v0.9.1
+	github.com/go-sql-driver/mysql v1.4.1
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/sirupsen/logrus v1.4.2
 	golang.org/x/crypto v0.0.0-20190513172903-22d7a77e9e5f // indirect

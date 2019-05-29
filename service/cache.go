@@ -30,7 +30,7 @@ func RemoveProject(project *db.Project) {
 
 // RemoveSession removes the given session from the cache.
 func RemoveSession(session *api.Session) {
-	log.Debugf("removing session id %d from cache", session.Auth)
+	log.Debugf("removing session id %s from cache", session.Auth)
 	authCache.Remove(session.Auth)
 }
 
@@ -42,6 +42,7 @@ func getCachedProject(id int) (*db.Project, bool, error) {
 	if err != nil {
 		return nil, false, err
 	}
+	log.Debugf("cache: returning project id: %d", id)
 	return p.(*db.Project), true, nil
 }
 
@@ -66,6 +67,7 @@ func getCachedSession(id string) (*api.Session, bool, error) {
 	if err != nil {
 		return nil, false, err
 	}
+	log.Debugf("cache: returning session id: %s", id)
 	return s.(*api.Session), true, nil
 }
 

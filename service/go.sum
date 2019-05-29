@@ -11,6 +11,8 @@ github.com/finkf/pcwgo/api v0.6.2 h1:/KqJPDnaINJwm1Iu4k5u6PXSYgkvkUNFzSsNpgPFbx4
 github.com/finkf/pcwgo/api v0.6.2/go.mod h1:eFwTXCRPJKiWI3xLh6ve9onvHygoKnJDCOOnEF7KnbY=
 github.com/finkf/pcwgo/db v0.9.1 h1:7EUIaAcB3i1y+0Ajif9kvYTcCO5hFwo30O0DK026OHg=
 github.com/finkf/pcwgo/db v0.9.1/go.mod h1:ptatN+6IezVdU03eNEz3BaqEKh+Ft6kUxraTGRYQgcA=
+github.com/go-sql-driver/mysql v1.4.1 h1:g24URVg0OFbNUTx9qqY1IRZ9D9z3iPyi5zKhQZpNwpA=
+github.com/go-sql-driver/mysql v1.4.1/go.mod h1:zAC/RDZ24gD3HViQzih4MyKcchzm+sOG5ZlKdlhCg5w=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/konsorten/go-windows-terminal-sequences v1.0.2 h1:DB17ag19krx9CFsz4o3enTrPXyIXCl+2iCXH/aMAp9s=
 github.com/konsorten/go-windows-terminal-sequences v1.0.2/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
