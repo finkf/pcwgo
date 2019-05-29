@@ -31,8 +31,8 @@ const JobsTableName = "jobs"
 
 const jobsTable = JobsTableName + "(" +
 	"id INTEGER NOT NULL PRIMARY KEY UNIQUE REFERENCES " + BooksTableName + "(BooksID)," +
-	"StatusID INTEGER NOT NULL REFERENCES " + JobsTableName + "(id)," +
-	"Timestamp INT(11) NOT NULL" +
+	"statusid INTEGER NOT NULL REFERENCES " + StatusTableName + "(id)," +
+	"timestamp INT(11) NOT NULL" +
 	");"
 
 // StatusTableName defines the name of the jobs status table.
@@ -82,7 +82,7 @@ func SetJobStatus(db DB, jobID, statusID int) error {
 }
 
 // FindJobByID returns the given job
-func FindJobByID(db DB, jobID int) (*api.Job, bool, error) {
+func FindJobByID(db DB, jobID int) (*api.JobStatus, bool, error) {
 	const stmnt = "SELECT j.id,j.Timestamp,j.StatusID,s.Text " +
 		"FROM " + JobsTableName + " AS j JOIN " + StatusTableName + " s " +
 		"ON j.statusid = s.id WHERE j.id=?"
@@ -94,7 +94,7 @@ func FindJobByID(db DB, jobID int) (*api.Job, bool, error) {
 	if !rows.Next() {
 		return nil, false, nil
 	}
-	var j api.Job
+	var j api.JobStatus
 	if err := rows.Scan(&j.JobID, &j.Timestamp, &j.StatusID, &j.StatusName); err != nil {
 		return nil, false, err
 	}
