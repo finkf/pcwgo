@@ -4,7 +4,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
 	"time"
@@ -240,4 +242,33 @@ func IsValidStatus(r *http.Response, codes ...int) bool {
 		}
 	}
 	return false
+}
+
+// LinkOrCopy tries to hard link dest to src.  If the file or link
+// already exists nothing is done and no error is returned.  If the
+// linking fails, LinkOrCopy tries to copy src to dest.
+func LinkOrCopy(src, dest string) (err error) {
+	if err := os.Link(src, dest); err == nil || os.IsExist(err) {
+		return nil
+	}
+	// Cannot link -> copy
+	in, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("cannot copy file: %v", err)
+	}
+	defer in.Close()
+	out, err := os.Create(dest)
+	if err != nil {
+		return fmt.Errorf("cannot copy file: %v", err)
+	}
+	defer func() {
+		ex := out.Close()
+		if err == nil {
+			err = ex
+		}
+	}()
+	if _, err := io.Copy(out, in); err != nil {
+		return fmt.Errorf("cannot copy file: %v", err)
+	}
+	return nil
 }
