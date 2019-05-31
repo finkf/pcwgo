@@ -103,7 +103,7 @@ func WithProject(f HandlerFunc) HandlerFunc {
 	re := regexp.MustCompile(`/books/(\d+)`)
 	return func(w http.ResponseWriter, r *http.Request, d *Data) {
 		var id int
-		if err := ParseIDs(r.URL.String(), re, &id); err != nil {
+		if n := ParseIDs(r.URL.String(), re, &id); n != 1 {
 			ErrorResponse(w, http.StatusNotFound, "invalid book ID: %s", r.URL)
 			return
 		}
@@ -217,20 +217,18 @@ func JSONResponse(w http.ResponseWriter, data interface{}) {
 }
 
 // ParseIDs parses the numeric fields of the given regex into the
-// given id pointers.
-func ParseIDs(url string, re *regexp.Regexp, ids ...*int) error {
+// given id pointers.  It returns the number of ids parsed.
+func ParseIDs(url string, re *regexp.Regexp, ids ...*int) int {
 	m := re.FindStringSubmatch(url)
-	if len(m) != len(ids)+1 {
-		return fmt.Errorf("invalid url: %s", url)
-	}
-	for i := 1; i < len(m); i++ {
-		id, err := strconv.Atoi(m[i])
+	var i int
+	for i = 0; i < len(ids) && i+1 < len(m); i++ {
+		id, err := strconv.Atoi(m[i+1])
 		if err != nil {
-			return fmt.Errorf("cannot convert number: %v", err)
+			return 0
 		}
-		*ids[i-1] = id
+		*ids[i] = id
 	}
-	return nil
+	return i
 }
 
 // IsValidStatus returns true if the given response has any of the given

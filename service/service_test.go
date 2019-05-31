@@ -10,22 +10,37 @@ func TestParseIDs(t *testing.T) {
 		test string
 		re   *regexp.Regexp
 		want []int
-		ok   bool
+		n    int
 	}{
 		{
 			"/books/1/pages/2/lines/3",
 			regexp.MustCompile(`/books/(\d+)/pages/(\d+)/lines/(\d+)$`),
-			[]int{1, 2, 3}, true,
+			[]int{1, 2, 3}, 3,
+		},
+		{
+			"/books/1/pages/2/lines/3",
+			regexp.MustCompile(`/books/(\d+)(?:/pages/(\d+)(?:/lines/(\d+))?)?$`),
+			[]int{1, 2, 3}, 3,
+		},
+		{
+			"/books/1/pages/2",
+			regexp.MustCompile(`/books/(\d+)(?:/pages/(\d+)(?:/lines/(\d+))?)?$`),
+			[]int{1, 2}, 2,
+		},
+		{
+			"/books/1",
+			regexp.MustCompile(`/books/(\d+)(?:/pages/(\d+)(?:/lines/(\d+))?)?$`),
+			[]int{1}, 1,
 		},
 		{
 			"/books/1/pages/2",
 			regexp.MustCompile(`/books/(\d+)/pages/(\d+)/lines/(\d+)$`),
-			nil, false,
+			nil, 0,
 		},
 		{
 			"/books/1000000000000000000000000000000000000000000000000/pages/2",
 			regexp.MustCompile(`/books/(\d+)/pages/(\d+)/lines/(\d+)$`),
-			nil, false,
+			nil, 0,
 		},
 	}
 	for _, tc := range tests {
@@ -34,14 +49,11 @@ func TestParseIDs(t *testing.T) {
 			for i := range tc.want {
 				ids[i] = new(int)
 			}
-			err := ParseIDs(tc.test, tc.re, ids...)
-			if tc.ok && err != nil {
-				t.Fatalf("got error: %v", err)
+			n := ParseIDs(tc.test, tc.re, ids...)
+			if n != tc.n {
+				t.Fatalf("expected %d; got %d", tc.n, n)
 			}
-			if !tc.ok && err == nil {
-				t.Fatalf("expected an error")
-			}
-			if !tc.ok {
+			if tc.n == 0 {
 				return
 			}
 			for i, id := range tc.want {
