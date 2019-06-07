@@ -64,28 +64,35 @@ func Close() error {
 // Func defines the callback functions for jobs in the queue.
 type Func func(context.Context) error
 
+// Descriptor defines the name and the according book ID for a running
+// job.
+type Descriptor struct {
+	BookID int
+	Name   string
+}
+
 // Start runs the given callback function as a background job.  It
 // starts the job in the background and immediately returns the job id
 // if the process was started without blocking.  You can check the
 // status of the job with the Job function at any given time.
-func Start(ctx context.Context, bookID int, f Func) (int, error) {
-	job, ok, err := db.FindJobByID(js.db, bookID)
+func Start(ctx context.Context, desc Descriptor, f Func) (int, error) {
+	job, ok, err := db.FindJobByID(js.db, desc.BookID)
 	if err != nil {
-		return 0, fmt.Errorf("cannot start job id %d: %v", bookID, err)
+		return 0, fmt.Errorf("cannot start job id %d: %v", desc.BookID, err)
 	}
 	if ok && job.StatusID == db.StatusIDRunning {
-		return 0, fmt.Errorf("cannot start job id %d: running", bookID)
+		return 0, fmt.Errorf("cannot start job id %d: running", desc.BookID)
 	}
 	var id int
 	if ok {
-		if err := setStatus(job.JobID, db.StatusIDRunning, db.StatusRunning); err != nil {
-			return 0, fmt.Errorf("cannot start job id %d: %v", bookID, err)
+		if err := db.SetJobStatusWithText(js.db, job.JobID, db.StatusIDRunning, desc.Name); err != nil {
+			return 0, fmt.Errorf("cannot start job id %d: %v", job.JobID, err)
 		}
 		id = job.JobID
 	} else {
-		xid, err := db.NewJob(js.db, bookID)
+		xid, err := db.NewJob(js.db, desc.BookID)
 		if err != nil {
-			return 0, fmt.Errorf("cannot start job id %d: %v", bookID, err)
+			return 0, fmt.Errorf("cannot start job id %d: %v", desc.BookID, err)
 		}
 		id = xid
 	}
@@ -137,21 +144,14 @@ func jobs() {
 		delete(js.cancelFuncs, job.id)
 		if job.err != nil {
 			log.Infof("job %d failed: %v", job.id, job.err)
-			if err := setStatus(job.id, db.StatusIDFailed, db.StatusFailed); err != nil {
-				log.Info(err)
+			if err := db.SetJobStatus(js.db, job.id, db.StatusIDFailed); err != nil {
+				log.Infof("cannot set job status to %s: %v", db.StatusFailed, err)
 			}
 			continue
 		}
-		if err := setStatus(job.id, db.StatusIDDone, db.StatusDone); err != nil {
-			log.Info(err)
+		if err := db.SetJobStatus(js.db, job.id, db.StatusIDDone); err != nil {
+			log.Infof("cannot set job status to %s: %v", db.StatusDone, err)
 		}
 	}
 	log.Debug("queue closed")
-}
-
-func setStatus(id, status int, name string) error {
-	if err := db.SetJobStatus(js.db, id, status); err != nil {
-		return fmt.Errorf("cannot set job status to %s: %v", name, err)
-	}
-	return nil
 }

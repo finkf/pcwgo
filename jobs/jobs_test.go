@@ -41,7 +41,8 @@ func Test(t *testing.T) {
 
 func testStart(t *testing.T, id int, f Func) {
 	t.Helper()
-	if _, err := Start(context.Background(), id, f); err != nil {
+	desc := Descriptor{BookID: id}
+	if _, err := Start(context.Background(), desc, f); err != nil {
 		t.Fatalf("cannot start: %v", err)
 	}
 }
