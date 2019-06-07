@@ -25,7 +25,7 @@ type j struct {
 type s struct {
 	id   int
 	err  error
-	f    Func
+	r    Runner
 	ctx  context.Context
 	stop bool
 }
@@ -61,42 +61,39 @@ func Close() error {
 	return nil
 }
 
-// Func defines the callback functions for jobs in the queue.
-type Func func(context.Context) error
-
-// Descriptor defines the name and the according book ID for a running
-// job.
-type Descriptor struct {
-	BookID int
-	Name   string
+// Runner defines the interface for any running job
+type Runner interface {
+	BookID() int               // returns the book id of the job
+	Name() string              // returns the name of the job
+	Run(context.Context) error // runs the job
 }
 
 // Start runs the given callback function as a background job.  It
 // starts the job in the background and immediately returns the job id
-// if the process was started without blocking.  You can check the
-// status of the job with the Job function at any given time.
-func Start(ctx context.Context, desc Descriptor, f Func) (int, error) {
-	job, ok, err := db.FindJobByID(js.db, desc.BookID)
+// without blocking.  You can check the status of the job with the Job
+// function at any given time.
+func Start(ctx context.Context, r Runner) (int, error) {
+	job, ok, err := db.FindJobByID(js.db, r.BookID())
 	if err != nil {
-		return 0, fmt.Errorf("cannot start job id %d: %v", desc.BookID, err)
+		return 0, fmt.Errorf("cannot start job id %d: %v", r.BookID(), err)
 	}
 	if ok && job.StatusID == db.StatusIDRunning {
-		return 0, fmt.Errorf("cannot start job id %d: running", desc.BookID)
+		return 0, fmt.Errorf("cannot start job id %d: running", r.BookID())
 	}
 	var id int
 	if ok {
-		if err := db.SetJobStatusWithText(js.db, job.JobID, db.StatusIDRunning, desc.Name); err != nil {
+		if err := db.SetJobStatusWithText(js.db, job.JobID, db.StatusIDRunning, r.Name()); err != nil {
 			return 0, fmt.Errorf("cannot start job id %d: %v", job.JobID, err)
 		}
 		id = job.JobID
 	} else {
-		xid, err := db.NewJob(js.db, desc.BookID, desc.Name)
+		xid, err := db.NewJob(js.db, r.BookID(), r.Name())
 		if err != nil {
-			return 0, fmt.Errorf("cannot start job id %d: %v", desc.BookID, err)
+			return 0, fmt.Errorf("cannot start job id %d: %v", r.BookID(), err)
 		}
 		id = xid
 	}
-	js.queue <- s{id: id, f: f, ctx: ctx}
+	js.queue <- s{id: id, r: r, ctx: ctx}
 	return id, nil
 }
 
@@ -127,15 +124,15 @@ func jobs() {
 			continue
 		}
 		// new job: start it
-		if job.f != nil {
+		if job.r != nil {
 			ctx, cancel := context.WithCancel(job.ctx)
 			js.cancelFuncs[job.id] = cancel
-			f := job.f // must copy function
+			r := job.r // must copy function
 			id := job.id
 			js.wg.Add(1)
 			go func() {
 				defer js.wg.Done()
-				js.queue <- s{id: id, err: f(ctx)}
+				js.queue <- s{id: id, err: r.Run(ctx)}
 				log.Infof("job %d: done", id)
 			}()
 			continue
