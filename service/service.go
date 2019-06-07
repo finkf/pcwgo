@@ -89,10 +89,10 @@ func Pool() db.DB {
 
 // Data defines the payload data for request handlers.
 type Data struct {
-	Session *api.Session // authentification information
-	Project *db.Project  // requested project
-	Post    interface{}  // post data
-	ID      int          // major id
+	Session *api.Session   // authentification information
+	Project *db.Project    // requested project
+	Post    interface{}    // post data
+	IDs     map[string]int // ids
 }
 
 // HandlerFunc defines the callback function to handle callbacks with
@@ -152,6 +152,20 @@ func WithMethods(args ...interface{}) http.HandlerFunc {
 			return
 		}
 		f(w, r, &Data{})
+	}
+}
+
+func WithIDs(re string, f HandlerFunc) HandlerFunc {
+	reg := regexp.MustCompile(re)
+	return func(w http.ResponseWriter, r *http.Request, d *Data) {
+		ids, err := parseNamedIDs(r.URL.String(), reg)
+		if err != nil {
+			ErrorResponse(w, http.StatusNotFound,
+				"cannot parse ids: %v", err)
+			return
+		}
+		d.IDs = ids
+		f(w, r, d)
 	}
 }
 
@@ -231,6 +245,25 @@ func ParseIDs(url string, re *regexp.Regexp, ids ...*int) int {
 		*ids[i] = id
 	}
 	return i
+}
+
+func parseNamedIDs(url string, re *regexp.Regexp) (map[string]int, error) {
+	m := re.FindStringSubmatch(url)
+	if len(m) == 0 {
+		return nil, fmt.Errorf("%s does not match %s", re, url)
+	}
+	ids := make(map[string]int)
+	for i := 1; i < len(m); i += 2 {
+		if m[i] == "" {
+			continue
+		}
+		id, err := strconv.Atoi(m[i+1])
+		if err != nil {
+			return nil, err
+		}
+		ids[m[i]] = id
+	}
+	return ids, nil
 }
 
 // IsValidStatus returns true if the given response has any of the given

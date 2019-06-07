@@ -13,33 +13,33 @@ func TestParseIDs(t *testing.T) {
 		n    int
 	}{
 		{
-			"/books/1/pages/2/lines/3",
-			regexp.MustCompile(`/books/(\d+)/pages/(\d+)/lines/(\d+)$`),
+			"/a/1/b/2/c/3",
+			regexp.MustCompile(`/a/(\d+)/b/(\d+)/c/(\d+)$`),
 			[]int{1, 2, 3}, 3,
 		},
 		{
-			"/books/1/pages/2/lines/3",
-			regexp.MustCompile(`/books/(\d+)(?:/pages/(\d+)(?:/lines/(\d+))?)?$`),
+			"/a/1/b/2/c/3",
+			regexp.MustCompile(`/a/(\d+)(?:/b/(\d+)(?:/c/(\d+))?)?$`),
 			[]int{1, 2, 3}, 3,
 		},
 		{
-			"/books/1/pages/2",
-			regexp.MustCompile(`/books/(\d+)(?:/pages/(\d+)(?:/lines/(\d+))?)?$`),
+			"/a/1/b/2",
+			regexp.MustCompile(`/a/(\d+)(?:/b/(\d+)(?:/c/(\d+))?)?$`),
 			[]int{1, 2}, 2,
 		},
 		{
-			"/books/1",
-			regexp.MustCompile(`/books/(\d+)(?:/pages/(\d+)(?:/lines/(\d+))?)?$`),
+			"/a/1",
+			regexp.MustCompile(`/a/(\d+)(?:/b/(\d+)(?:/c/(\d+))?)?$`),
 			[]int{1}, 1,
 		},
 		{
-			"/books/1/pages/2",
-			regexp.MustCompile(`/books/(\d+)/pages/(\d+)/lines/(\d+)$`),
+			"/a/1/b/2",
+			regexp.MustCompile(`/a/(\d+)/b/(\d+)/c/(\d+)$`),
 			nil, 0,
 		},
 		{
-			"/books/1000000000000000000000000000000000000000000000000/pages/2",
-			regexp.MustCompile(`/books/(\d+)/pages/(\d+)/lines/(\d+)$`),
+			"/a/1000000000000000000000000000000000000000000000000/b/2",
+			regexp.MustCompile(`/a/(\d+)/b/(\d+)`),
 			nil, 0,
 		},
 	}
