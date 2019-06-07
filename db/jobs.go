@@ -67,10 +67,10 @@ func CreateTableJobs(db DB) error {
 
 // NewJob inserts a new running job into the jobs table and returns
 // the new job ID.
-func NewJob(db DB, bookID int) (int, error) {
-	const stmnt = "INSERT INTO " + JobsTableName + "(id,statusid,timestamp,text) VALUES (?,?,?,'')"
+func NewJob(db DB, bookID int, text string) (int, error) {
+	const stmnt = "INSERT INTO " + JobsTableName + "(id,statusid,timestamp,text) VALUES (?,?,?,?)"
 	// ts := time.Now().Unix()
-	_, err := Exec(db, stmnt, bookID, StatusIDRunning, time.Now().Unix())
+	_, err := Exec(db, stmnt, bookID, StatusIDRunning, time.Now().Unix(), text)
 	return bookID, err // book and job IDs are the same
 }
 
