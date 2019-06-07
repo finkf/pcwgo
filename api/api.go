@@ -222,14 +222,16 @@ type SuggestionCounts struct {
 
 // Suggestion defines one suggestion of the profiler for a token.
 type Suggestion struct {
-	Token      string  `json:"token"`
-	Suggestion string  `json:"suggestion"`
-	Modern     string  `json:"modern"`
-	Dict       string  `json:"dict"`
-	Distance   int     `json:"distance"`
-	ID         int     `json:"id"`
-	Weight     float64 `json:"weight"`
-	Top        bool    `json:"top"`
+	Token        string   `json:"token"`
+	Suggestion   string   `json:"suggestion"`
+	Modern       string   `json:"modern"`
+	Dict         string   `json:"dict"`
+	Distance     int      `json:"distance"`
+	ID           int      `json:"id"`
+	Weight       float64  `json:"weight"`
+	Top          bool     `json:"top"`
+	OCRPatterns  []string `json:"ocrPatterns"`
+	HistPatterns []string `json:"histPatterns"`
 }
 
 // PatternCounts holds the pattern counts for error patterns.
@@ -256,9 +258,24 @@ type AdaptiveTokens struct {
 }
 
 type ExtendedLexicon struct {
-	BookID        int            `json:"bookId"`
-	Considered    map[string]int `json:"considered"`
-	NotConsidered map[string]int `json:"notConsidered"`
+	BookID    int            `json:"bookId"`
+	ProjectID int            `json:"projectId"`
+	Yes       map[string]int `json:"yes"`
+	No        map[string]int `json:"no"`
+}
+
+type AdditionalLexicon struct {
+	BookID    int      `json:"bookId"`
+	ProjectID int      `json:"projectId"`
+	Tokens    []string `json:"tokens"`
+}
+
+type PostCorrection struct {
+	BookID    int            `json:"bookId"`
+	ProjectID int            `json:"projectId"`
+	Always    map[string]int `json:"always"`
+	Sometimes map[string]int `json:"sometimes"`
+	Never     map[string]int `json:"never"`
 }
 
 // Job defines the job struct.
@@ -272,6 +289,7 @@ type JobStatus struct {
 	BookID     int    `json:"bookId"`
 	StatusID   int    `json:"statusId"`
 	StatusName string `json:"statusName"`
+	JobName    string `json:"jobName"`
 	Timestamp  int64  `json:"timestamp"`
 }
 
@@ -284,6 +302,17 @@ func (js JobStatus) Time() time.Time {
 // configured languages.
 type Languages struct {
 	Languages []string `json:"languages"`
+}
+
+// Model defines the ocr models.
+type Model struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+// Models defines multiple models.
+type Models struct {
+	Models []Model `json:"models"`
 }
 
 // Error defines json-formatted error responses.

@@ -343,6 +343,48 @@ func (c Client) GetExtendedLexicon(bookID int) (ExtendedLexicon, error) {
 	return el, c.get(url, &el)
 }
 
+// PostPostCorrection sends a request to start the automatic post
+// correction on the given book with the given extended lexicon
+// tokens.
+func (c Client) PostPostCorrection(bookID int, tokens ...string) (Job, error) {
+	url := c.url("/postcorrect/rrdm"+bookPath(bookID), Auth, c.Session.Auth)
+	post := AdditionalLexicon{BookID: bookID, Tokens: tokens}
+	var job Job
+	return job, c.post(url, post, &job)
+}
+
+// GetExtendendLexicon returns the post-correction data for the given book.
+func (c Client) GetPostCorrection(bookID int) (*PostCorrection, error) {
+	url := c.url("/postcorrect/rrdm"+bookPath(bookID), Auth, c.Session.Auth)
+	var pc PostCorrection
+	return &pc, c.get(url, &pc)
+}
+
+// GetOCRModels returns the available ocr models for the given book or
+// project.
+func (c Client) GetOCRModels(bookID int) (Models, error) {
+	url := c.url("/ocr"+bookPath(bookID), Auth, c.Session.Auth)
+	var models Models
+	return models, c.get(url, &models)
+}
+
+// PostOCRModel runs the ocr over the given book or project.  If train
+// is true, a model is trained on the ground truth data.
+func (c Client) PostOCRModel(bid, pid, lid int, name string) (Job, error) {
+	model := Model{Name: name}
+	prefix := "/ocr"
+	if lid != 0 {
+		prefix += linePath(bid, pid, lid)
+	} else if pid != 0 {
+		prefix += pagePath(bid, pid)
+	} else {
+		prefix += bookPath(bid)
+	}
+	url := c.url(prefix, Auth, c.Session.Auth)
+	var job Job
+	return job, c.post(url, model, &job)
+}
+
 // Raw sends a get request to the given path and writes the raw
 // response content into the given writer.
 func (c Client) Raw(path string, out io.Writer) error {
