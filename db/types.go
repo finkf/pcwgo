@@ -81,6 +81,8 @@ const (
 	SuggestionsTableWeight           = "weight"
 	SuggestionsTableTopSuggestion    = "topsuggestion"
 	SuggestionsTableDistance         = "distance"
+	SuggestionsTableHistPatterns     = "histpatterns"
+	SuggestionsTableOCRPatterns      = "ocrpatterns"
 )
 
 var suggestionsTable = SuggestionsTableName + "(" +
@@ -90,6 +92,8 @@ var suggestionsTable = SuggestionsTableName + "(" +
 	SuggestionsTableSuggestionTypeID + " int references types(id)," +
 	SuggestionsTableModernTypeID + " int references types(id)," +
 	SuggestionsTableDict + " varchar(50) not null," +
+	SuggestionsTableOCRPatterns + " varchar(50) not null," +
+	SuggestionsTableHistPatterns + " varchar(50) not null," +
 	SuggestionsTableWeight + " double not null," +
 	SuggestionsTableDistance + " int not null," +
 	SuggestionsTableTopSuggestion + " boolean not null," +

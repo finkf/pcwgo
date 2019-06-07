@@ -32,6 +32,7 @@ const JobsTableName = "jobs"
 const jobsTable = JobsTableName + "(" +
 	"id INTEGER NOT NULL PRIMARY KEY UNIQUE REFERENCES " + BooksTableName + "(BooksID)," +
 	"statusid INTEGER NOT NULL REFERENCES " + StatusTableName + "(id)," +
+	"text VARCHAR(15) NOT NULL," +
 	"timestamp INT(11) NOT NULL" +
 	");"
 
@@ -67,7 +68,7 @@ func CreateTableJobs(db DB) error {
 // NewJob inserts a new running job into the jobs table and returns
 // the new job ID.
 func NewJob(db DB, bookID int) (int, error) {
-	const stmnt = "INSERT INTO " + JobsTableName + "(id,statusid,timestamp) VALUES (?,?,?)"
+	const stmnt = "INSERT INTO " + JobsTableName + "(id,statusid,timestamp,text) VALUES (?,?,?,'')"
 	// ts := time.Now().Unix()
 	_, err := Exec(db, stmnt, bookID, StatusIDRunning, time.Now().Unix())
 	return bookID, err // book and job IDs are the same
@@ -81,9 +82,16 @@ func SetJobStatus(db DB, jobID, statusID int) error {
 	return err
 }
 
+// SetJobStatusWithText sets a new status and text (name) for a job.
+func SetJobStatusWithText(db DB, jobID, statusID int, text string) error {
+	const stmnt = "UPDATE " + JobsTableName + " SET StatusID=?,Timestamp=?,Text=? WHERE id=?"
+	_, err := Exec(db, stmnt, statusID, time.Now().Unix(), text, jobID)
+	return err
+}
+
 // FindJobByID returns the given job
 func FindJobByID(db DB, jobID int) (*api.JobStatus, bool, error) {
-	const stmnt = "SELECT j.id,j.Timestamp,j.StatusID,s.Text " +
+	const stmnt = "SELECT j.id,j.Timestamp,j.StatusID,j.text,s.Text " +
 		"FROM " + JobsTableName + " AS j JOIN " + StatusTableName + " s " +
 		"ON j.statusid = s.id WHERE j.id=?"
 	rows, err := Query(db, stmnt, jobID)
@@ -95,7 +103,7 @@ func FindJobByID(db DB, jobID int) (*api.JobStatus, bool, error) {
 		return nil, false, nil
 	}
 	var j api.JobStatus
-	if err := rows.Scan(&j.JobID, &j.Timestamp, &j.StatusID, &j.StatusName); err != nil {
+	if err := rows.Scan(&j.JobID, &j.Timestamp, &j.StatusID, &j.JobName, &j.StatusName); err != nil {
 		return nil, false, err
 	}
 	j.BookID = j.JobID // job and book IDs are the same

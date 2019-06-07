@@ -15,7 +15,7 @@ const pagesTable = PagesTableName + "(" +
 
 type Page struct {
 	BookID, PageID           int
-	ImagePath                string
+	ImagePath, OCRPath       string
 	Left, Right, Top, Bottom int
 }
 
