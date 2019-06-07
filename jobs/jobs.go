@@ -90,7 +90,7 @@ func Start(ctx context.Context, desc Descriptor, f Func) (int, error) {
 		}
 		id = job.JobID
 	} else {
-		xid, err := db.NewJob(js.db, desc.BookID)
+		xid, err := db.NewJob(js.db, desc.BookID, desc.Name)
 		if err != nil {
 			return 0, fmt.Errorf("cannot start job id %d: %v", desc.BookID, err)
 		}
