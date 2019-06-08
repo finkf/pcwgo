@@ -41,6 +41,11 @@ type Char struct {
 	Conf     float64
 }
 
+// IsCorrected returns true if the given character is corrected.
+func (c Char) IsCorrected bool {
+	return c.Cor == 0
+}
+
 // Chars defines a slice of characters.
 type Chars []Char
 
