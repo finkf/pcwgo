@@ -93,7 +93,7 @@ func FindProjectByID(db DB, id int) (*Project, bool, error) {
 		"FROM " + ProjectsTableName + " p JOIN " + UsersTableName +
 		" u ON p.Owner=u.ID JOIN " + BooksTableName +
 		" b ON p.Origin=b.BookID JOIN " + StatusTableName +
-		" s ON b.status=s.id " +
+		" s ON b.statusid=s.id " +
 		"WHERE p.ID=?"
 	rows, err := Query(db, stmt, id)
 	if err != nil {
@@ -118,7 +118,7 @@ func FindProjectByOwner(db DB, owner int64) ([]Project, error) {
 		"FROM " + ProjectsTableName + " p JOIN " + UsersTableName +
 		" u ON p.Owner=u.ID JOIN " + BooksTableName +
 		" b ON p.Origin=b.BookID JOIN " + StatusTableName +
-		" s ON b.status=s.id " +
+		" s ON b.statusid=s.id " +
 		"WHERE p.Owner=?"
 	rows, err := Query(db, stmt, owner)
 	if err != nil {
