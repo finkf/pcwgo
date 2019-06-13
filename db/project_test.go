@@ -32,6 +32,9 @@ func newTestProject(t *testing.T, db DB, id int, book *Book, user *api.User) *Pr
 
 func withProjectDB(t *testing.T, f func(*sql.DB)) {
 	sqlite.With("projects.sqlite", func(db *sql.DB) {
+		if err := CreateTableJobs(db); err != nil {
+			t.Fatalf("got error: %v", err)
+		}
 		if err := CreateTableUsers(db); err != nil {
 			t.Fatalf("got error: %v", err)
 		}

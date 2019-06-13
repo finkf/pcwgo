@@ -42,7 +42,7 @@ type Char struct {
 }
 
 // IsCorrected returns true if the given character is corrected.
-func (c Char) IsCorrected bool {
+func (c Char) IsCorrected() bool {
 	return c.Cor == 0
 }
 
