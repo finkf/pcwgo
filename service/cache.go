@@ -24,13 +24,13 @@ func Purge() {
 
 // RemoveProject remove the given project from the cache.
 func RemoveProject(project *db.Project) {
-	log.Debugf("removing project id %d from cache", project.ProjectID)
+	log.Debugf("cache: removing project id %d", project.ProjectID)
 	projectCache.Remove(project.ProjectID)
 }
 
 // RemoveSession removes the given session from the cache.
 func RemoveSession(session *api.Session) {
-	log.Debugf("removing session id %s from cache", session.Auth)
+	log.Debugf("cache: removing session id %s", session.Auth)
 	authCache.Remove(session.Auth)
 }
 
