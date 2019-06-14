@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"strings"
 	"sync"
 
 	"github.com/finkf/pcwgo/api"
@@ -160,6 +161,7 @@ func jobs() {
 // command's stderr is logged using log.Debug.  Run waits for the
 // command to finish and returns its result.
 func Run(ctx context.Context, cmd string, args ...string) error {
+	log.Debugf("running command: %s", strings.Join(append([]string{cmd}, args...), " "))
 	exe := exec.CommandContext(ctx, cmd, args...)
 	stderr, err := exe.StderrPipe()
 	if err != nil {
