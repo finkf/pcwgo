@@ -1,8 +1,10 @@
 package jobs // import "github.com/finkf/pcwgo/jobs"
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"os/exec"
 	"sync"
 
 	"github.com/finkf/pcwgo/api"
@@ -152,4 +154,28 @@ func jobs() {
 		}
 	}
 	log.Debug("queue closed")
+}
+
+// Run executes a command with the given context and arguments.  The
+// command's stderr is logged using log.Debug.  Run waits for the
+// command to finish and returns its result.
+func Run(ctx context.Context, cmd string, args ...string) error {
+	exe := exec.CommandContext(ctx, cmd, args...)
+	stderr, err := exe.StderrPipe()
+	if err != nil {
+		return fmt.Errorf("cannot connect to command's stderr: %v", err)
+	}
+	go func() {
+		defer stderr.Close()
+		s := bufio.NewScanner(stderr)
+		for s.Scan() {
+			log.Debug(s.Text())
+		}
+		// we do not care about errors
+	}()
+	// we ignore command's stdout
+	if err := exe.Run(); err != nil {
+		return fmt.Errorf("cannot run command: %v", err)
+	}
+	return nil
 }
