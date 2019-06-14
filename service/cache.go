@@ -34,6 +34,16 @@ func RemoveSession(session *api.Session) {
 	authCache.Remove(session.Auth)
 }
 
+// UncacheProject remove the given project from the cache.
+func UncacheProject(project *db.Project) {
+	RemoveProject(project)
+}
+
+// UncacheSession removes the given session from the cache.
+func RemoveSession(session *api.Session) {
+	RemoveSession(session)
+}
+
 func getCachedProject(id int) (*db.Project, bool, error) {
 	p, err := projectCache.Get(id)
 	if err != nil && err == errNotFound {
