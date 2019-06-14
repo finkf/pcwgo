@@ -70,15 +70,16 @@ type Runner interface {
 
 // Start runs the given callback function as a background job.  It
 // starts the job in the background and immediately returns the job id
-// without blocking.  You can check the status of the job with the Job
-// function at any given time.
+// without blocking.  If a job for the given book is already running,
+// this job's id information is returned.  You can check the status of
+// the job with the Job function at any given time.
 func Start(ctx context.Context, r Runner) (int, error) {
 	job, ok, err := db.FindJobByID(js.db, r.BookID())
 	if err != nil {
 		return 0, fmt.Errorf("cannot start job id %d: %v", r.BookID(), err)
 	}
 	if ok && job.StatusID == db.StatusIDRunning {
-		return 0, fmt.Errorf("cannot start job id %d: running", r.BookID())
+		return Job(r.BookID()).JobID, nil
 	}
 	var id int
 	if ok {
