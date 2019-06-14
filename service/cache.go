@@ -40,7 +40,7 @@ func UncacheProject(project *db.Project) {
 }
 
 // UncacheSession removes the given session from the cache.
-func RemoveSession(session *api.Session) {
+func UncacheSession(session *api.Session) {
 	RemoveSession(session)
 }
 
