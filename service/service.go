@@ -125,6 +125,28 @@ func WithProject(f HandlerFunc) HandlerFunc {
 	}
 }
 
+// DropProject removes the active project from the cache if it is
+// non-nil.  Should be joined after WithProject.
+func DropProject(f HandlerFunc) HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request, d *Data) {
+		f(w, r, d)
+		if d.Project != nil {
+			RemoveProject(d.Project)
+		}
+	}
+}
+
+// DropSession removes the active session from the cache if it is
+// non-nil.  Should be joined after WithAuth.
+func DropSession(f HandlerFunc) HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request, d *Data) {
+		f(w, r, d)
+		if d.Session != nil {
+			RemoveSession(d.Session)
+		}
+	}
+}
+
 // WithMethods dispatches a given pair of the request methods to the
 // given HandlerFunc with an empty data context.  The first element
 // must be of type string, the second argument must be of type
