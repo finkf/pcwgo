@@ -1,6 +1,7 @@
 package service // import "github.com/finkf/pcwgo/service"
 
 import (
+	"compress/gzip"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -250,6 +251,17 @@ func ErrorResponse(w http.ResponseWriter, s int, f string, args ...interface{}) 
 func JSONResponse(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(data); err != nil {
+		log.Infof("cannot write json response: %v", err)
+	}
+}
+
+// GZIPJSONResponse writes a gzipped json-formatted response.  Any
+// errors are being logged.
+func GZIPJSONResponse(w http.ResponseWriter, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Add("Content-Encoding", "gzip")
+	gz := gzip.NewWriter(w)
+	if err := json.NewEncoder(gz).Encode(data); err != nil {
 		log.Infof("cannot write json response: %v", err)
 	}
 }
