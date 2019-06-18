@@ -271,10 +271,10 @@ func (c Client) Finish(pid int) error {
 }
 
 // PostProfile sends a request to profile the book with the given id.
-func (c Client) PostProfile(bookID int) (Job, error) {
+func (c Client) PostProfile(bookID int, tokens ...string) (Job, error) {
 	url := c.url("/profile"+bookPath(bookID), Auth, c.Session.Auth)
 	var job Job
-	return job, c.post(url, nil, &job)
+	return job, c.post(url, AdditionalLexicon{Tokens: tokens}, &job)
 }
 
 // GetJobStatus returns the job status for the given job.

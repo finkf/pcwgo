@@ -254,10 +254,10 @@ type ExtendedLexicon struct {
 	No        map[string]int `json:"no"`
 }
 
+// AdditionalLexicon represents the additional lexicon tokens for th
+// post data of the postcorrection and the profiler.
 type AdditionalLexicon struct {
-	BookID    int      `json:"bookId"`
-	ProjectID int      `json:"projectId"`
-	Tokens    []string `json:"tokens"`
+	Tokens []string `json:"tokens"`
 }
 
 type PostCorrection struct {
