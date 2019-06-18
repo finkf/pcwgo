@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-
-	"github.com/finkf/gofiler"
 )
 
 const (
@@ -196,14 +194,6 @@ type SearchResults struct {
 type Match struct {
 	Line   Line    `json:"line"`
 	Tokens []Token `json:"tokens"`
-}
-
-// Profile is gofiler.Profile wrapped with accordant book ID.  There
-// is no ProjectID, because the profile is global for each projects of
-// any given book.
-type Profile struct {
-	gofiler.Profile
-	BookID int `json:"bookId"`
 }
 
 // Suggestions defines the profiler's suggestions for tokens.

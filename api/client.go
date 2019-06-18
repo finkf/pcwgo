@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/finkf/gofiler"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -284,9 +285,9 @@ func (c Client) GetJobStatus(jobID int) (*JobStatus, error) {
 }
 
 // GetProfile downloads the profile for the given book.
-func (c Client) GetProfile(bookID int) (Profile, error) {
+func (c Client) GetProfile(bookID int) (gofiler.Profile, error) {
 	url := c.url("/profile"+bookPath(bookID), Auth, c.Session.Auth)
-	var profile Profile
+	var profile gofiler.Profile
 	return profile, c.get(url, &profile)
 }
 
