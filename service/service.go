@@ -261,8 +261,9 @@ func GZIPJSONResponse(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Add("Content-Encoding", "gzip")
 	gz := gzip.NewWriter(w)
+	defer gz.Close()
 	if err := json.NewEncoder(gz).Encode(data); err != nil {
-		log.Infof("cannot write json response: %v", err)
+		log.Infof("cannot write gzipped json response: %v", err)
 	}
 }
 
