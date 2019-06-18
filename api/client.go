@@ -349,7 +349,7 @@ func (c Client) GetExtendedLexicon(bookID int) (ExtendedLexicon, error) {
 // tokens.
 func (c Client) PostPostCorrection(bookID int, tokens ...string) (Job, error) {
 	url := c.url("/postcorrect/rrdm"+bookPath(bookID), Auth, c.Session.Auth)
-	post := AdditionalLexicon{BookID: bookID, Tokens: tokens}
+	post := AdditionalLexicon{Tokens: tokens}
 	var job Job
 	return job, c.post(url, post, &job)
 }
