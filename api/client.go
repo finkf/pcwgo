@@ -371,7 +371,7 @@ func (c Client) GetOCRModels(bookID int) (Models, error) {
 // PostOCRModel runs the ocr over the given book or project.  If train
 // is true, a model is trained on the ground truth data.
 func (c Client) PostOCRModel(bid, pid, lid int, name string) (Job, error) {
-	model := Model{Name: name}
+	models := Models{Models: []Model{Model{Name: name}}}
 	prefix := "/ocr"
 	if lid != 0 {
 		prefix += linePath(bid, pid, lid)
@@ -382,7 +382,7 @@ func (c Client) PostOCRModel(bid, pid, lid int, name string) (Job, error) {
 	}
 	url := c.url(prefix, Auth, c.Session.Auth)
 	var job Job
-	return job, c.post(url, model, &job)
+	return job, c.post(url, models, &job)
 }
 
 // Raw sends a get request to the given path and writes the raw
