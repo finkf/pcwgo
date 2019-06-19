@@ -15,6 +15,7 @@ const (
 	StatusIDProfiled
 	StatusIDPostCorrected
 	StatusIDExtendedLexicon
+	StatusIDProfiledWithEL
 )
 
 // Status names
@@ -26,6 +27,7 @@ const (
 	StatusProfiled        = "profiled"
 	StatusPostCorrected   = "post-corrected"
 	StatusExtendedLexicon = "extended-lexicon"
+	StatusProfiledWithEL  = "profiled-with-el"
 )
 
 // JobsTableName defines the name of the jobs table.
@@ -54,7 +56,7 @@ func CreateTableJobs(db DB) error {
 		return err
 	}
 	stmt := "INSERT INTO status (id,text) VALUES " +
-		"(?,?),(?,?),(?,?),(?,?),(?,?),(?,?),(?,?)"
+		"(?,?),(?,?),(?,?),(?,?),(?,?),(?,?),(?,?),(?,?)"
 	// insert and ignore any errors
 	Exec(db, stmt,
 		StatusIDFailed, StatusFailed,
@@ -64,6 +66,7 @@ func CreateTableJobs(db DB) error {
 		StatusIDEmpty, StatusEmpty,
 		StatusIDPostCorrected, StatusPostCorrected,
 		StatusIDExtendedLexicon, StatusExtendedLexicon,
+		StatusIDProfiledWithEL, StatusProfiledWithEL,
 	)
 	_, err = Exec(db, "CREATE TABLE IF NOT EXISTS "+jobsTable)
 	return err
