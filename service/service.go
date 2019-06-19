@@ -218,7 +218,7 @@ func parseIDMap(url string, keys ...string) (map[string]int, error) {
 // Parse an integer from str to the first `/` or to the end of the
 // string.
 func parseInt(str string) (int, string, error) {
-	pos := strings.Index(str, "/")
+	pos := strings.IndexAny(str, "/?")
 	if pos == -1 {
 		pos = len(str)
 	}
