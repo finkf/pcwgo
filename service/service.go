@@ -182,8 +182,8 @@ func WithMethods(args ...interface{}) http.HandlerFunc {
 // WithIDs fills the IDs map with the given (key,id) pairs or returns
 // status not found if the given ids could not be parsed in the given
 // order.  You can prefix a key with `?` to mark it optional (the key
-// is then set to 0 in the ID map if it is not present in the request
-// URL.
+// is then not inserted intot the ID map if it is not present in the
+// request's URL).
 func WithIDs(f HandlerFunc, keys ...string) HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request, d *Data) {
 		ids, err := parseIDMap(r.URL.String(), keys...)
@@ -213,7 +213,6 @@ func parseIDMap(url string, keys ...string) (map[string]int, error) {
 			return nil, fmt.Errorf("cannot find key: %s", key)
 		}
 		if pos == -1 && opt {
-			res[key] = 0
 			continue
 		}
 		id, rest, err := parseInt(url[pos+len(search):])

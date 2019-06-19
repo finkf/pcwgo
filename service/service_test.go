@@ -19,7 +19,7 @@ func TestParseIDMap(t *testing.T) {
 		{"/jobs/1/books/2/lines/3", []string{"?jobs", "?books", "?lines"},
 			map[string]int{"jobs": 1, "books": 2, "lines": 3}, false},
 		{"/jobs/1/lines/3", []string{"?jobs", "?books", "?lines"},
-			map[string]int{"jobs": 1, "books": 0, "lines": 3}, false},
+			map[string]int{"jobs": 1, "lines": 3}, false},
 		/* parameters */
 		{"/jobs/1?auth=xyz", []string{"jobs"}, map[string]int{"jobs": 1}, false},
 		/* wrong order */
