@@ -347,11 +347,10 @@ func (c Client) GetExtendedLexicon(bookID int) (ExtendedLexicon, error) {
 // PostPostCorrection sends a request to start the automatic post
 // correction on the given book with the given extended lexicon
 // tokens.
-func (c Client) PostPostCorrection(bookID int, tokens ...string) (Job, error) {
+func (c Client) PostPostCorrection(bookID int) (Job, error) {
 	url := c.url("/postcorrect/rrdm"+bookPath(bookID), Auth, c.Session.Auth)
-	post := AdditionalLexicon{Tokens: tokens}
 	var job Job
-	return job, c.post(url, post, &job)
+	return job, c.post(url, nil, &job)
 }
 
 // GetExtendendLexicon returns the post-correction data for the given book.
