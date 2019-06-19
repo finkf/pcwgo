@@ -164,6 +164,7 @@ type Token struct {
 	IsFullyCorrected     bool      `json:"isFullyCorrected"`
 	IsPartiallyCorrected bool      `json:"isPartiallyCorrected"`
 	IsNormal             bool      `json:"isNormal"`
+	IsMatch              bool      `json:"match"`
 	Box                  Box       `json:"box"`
 }
 
