@@ -10,6 +10,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/bluele/gcache"
@@ -178,10 +179,12 @@ func WithMethods(args ...interface{}) http.HandlerFunc {
 	}
 }
 
-func WithIDs(re string, f HandlerFunc) HandlerFunc {
-	reg := regexp.MustCompile(re)
+// WithIDs fills the IDs map with the given (key,id) pairs or returns
+// status not found if the given ids could not be parsed in the given
+// order.
+func WithIDs(f HandlerFunc, keys ...string) HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request, d *Data) {
-		ids, err := parseNamedIDs(r.URL.String(), reg)
+		ids, err := parseIDMap(r.URL.String(), keys...)
 		if err != nil {
 			ErrorResponse(w, http.StatusNotFound,
 				"cannot parse ids: %v", err)
@@ -190,6 +193,40 @@ func WithIDs(re string, f HandlerFunc) HandlerFunc {
 		d.IDs = ids
 		f(w, r, d)
 	}
+}
+
+// Parse (key,int) pairs from an url `/key/int/...` in the given order
+// of keys.
+func parseIDMap(url string, keys ...string) (map[string]int, error) {
+	res := make(map[string]int, len(keys))
+	for _, key := range keys {
+		search := "/" + key + "/"
+		pos := strings.Index(url, search)
+		if pos == -1 {
+			return nil, fmt.Errorf("cannot find key: %s", key)
+		}
+		id, rest, err := parseInt(url[pos+len(search):])
+		if err != nil {
+			return nil, err
+		}
+		res[key] = id
+		url = rest
+	}
+	return res, nil
+}
+
+// Parse an integer from str to the first `/` or to the end of the
+// string.
+func parseInt(str string) (int, string, error) {
+	pos := strings.Index(str, "/")
+	if pos == -1 {
+		pos = len(str)
+	}
+	id, err := strconv.Atoi(str[0:pos])
+	if err != nil {
+		return 0, "", fmt.Errorf("cannot parse id in string: %s", str)
+	}
+	return id, str[pos:], nil
 }
 
 // WithAuth checks if the given request contains a valid
@@ -280,25 +317,6 @@ func ParseIDs(url string, re *regexp.Regexp, ids ...*int) int {
 		*ids[i] = id
 	}
 	return i
-}
-
-func parseNamedIDs(url string, re *regexp.Regexp) (map[string]int, error) {
-	m := re.FindStringSubmatch(url)
-	if len(m) == 0 {
-		return nil, fmt.Errorf("%s does not match %s", re, url)
-	}
-	ids := make(map[string]int)
-	for i := 1; i < len(m); i += 2 {
-		if m[i] == "" {
-			continue
-		}
-		id, err := strconv.Atoi(m[i+1])
-		if err != nil {
-			return nil, err
-		}
-		ids[m[i]] = id
-	}
-	return ids, nil
 }
 
 // IsValidStatus returns true if the given response has any of the given

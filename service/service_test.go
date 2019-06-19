@@ -1,9 +1,44 @@
 package service
 
 import (
+	"reflect"
 	"regexp"
 	"testing"
 )
+
+func TestParseIDMap(t *testing.T) {
+	tests := []struct {
+		url     string
+		keys    []string
+		want    map[string]int
+		wantErr bool
+	}{
+		{"/a/1/b/c/d/e/2", []string{"a", "e"}, map[string]int{"a": 1, "e": 2}, false},
+		{"/jobs/1/books/2/lines/3", []string{"jobs", "books", "lines"},
+			map[string]int{"jobs": 1, "books": 2, "lines": 3}, false},
+		/* wrong order */
+		{"/jobs/1/books/2", []string{"books", "jobs"}, nil, true},
+		/* not a valid int */
+		{"/jobs/1/books/3foobar/", []string{"jobs", "books"}, nil, true},
+	}
+	for _, tc := range tests {
+		t.Run(tc.url, func(t *testing.T) {
+			got, err := parseIDMap(tc.url, tc.keys...)
+			if err == nil && tc.wantErr {
+				t.Fatalf("expected an error")
+			}
+			if err != nil && !tc.wantErr {
+				t.Fatalf("got error: %v", err)
+			}
+			if tc.wantErr {
+				return
+			}
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Fatalf("expected %v; got %v", tc.want, got)
+			}
+		})
+	}
+}
 
 func TestParseIDs(t *testing.T) {
 	tests := []struct {
