@@ -203,14 +203,6 @@ func (c Client) GetTokens(bookID, pageID, lineID int) (Tokens, error) {
 	return tokens, err
 }
 
-// PostToken posts new content to the given token.
-func (c Client) PostToken(bookID, pageID, lineID, tokenID int, cor Correction) (*Token, error) {
-	var token Token
-	url := c.url(tokenPath(bookID, pageID, lineID, tokenID), Auth, c.Session.Auth)
-	err := c.post(url, cor, &token)
-	return &token, err
-}
-
 // Search searches for one or more tokens.
 func (c Client) Search(bookID int, q string, qs ...string) (*SearchResults, error) {
 	params := []string{Auth, c.Session.Auth, "p", "0",

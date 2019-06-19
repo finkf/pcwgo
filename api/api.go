@@ -43,7 +43,9 @@ type Version struct {
 
 // Correction defines the post data for correction requests.
 type Correction struct {
-	Correction string `json:"correction"`
+	Replace string `json:"replace"`
+	Query   string `json:"query,omitempty"`
+	Prefix  string `json:"prefix,omitempty"`
 }
 
 // Session defines an authenticates user sessions.  A session is
