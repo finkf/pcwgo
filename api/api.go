@@ -148,6 +148,7 @@ type Line struct {
 	IsFullyCorrected     bool      `json:"isFullyCorrected"`
 	IsPartiallyCorrected bool      `json:"isPartiallyCorrected"`
 	Box                  Box       `json:"box"`
+	Tokens               []Token   `json:"tokens"`
 }
 
 // Token defines a token on a line.
