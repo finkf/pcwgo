@@ -88,12 +88,11 @@ func InsertProject(db DB, p *Project) error {
 func FindProjectByID(db DB, id int) (*Project, bool, error) {
 	const stmt = "SELECT p.ID,p.Pages," +
 		"b.BookID,b.Year,b.Author,b.Title,b.Description,b.URI," +
-		"COALESCE(b.ProfilerURL,''),b.Directory,b.Lang,s.text," +
+		"COALESCE(b.ProfilerURL,''),b.Directory,b.Lang," +
+		"b.profiled,b.extendedlexicon,b.postcorrected," +
 		"u.ID,u.Name,u.Email,u.Institute,u.Admin " +
 		"FROM " + ProjectsTableName + " p JOIN " + UsersTableName +
-		" u ON p.Owner=u.ID JOIN " + BooksTableName +
-		" b ON p.Origin=b.BookID JOIN " + StatusTableName +
-		" s ON b.statusid=s.id " +
+		" u ON p.Owner=u.ID JOIN " + BooksTableName + " b ON p.Origin=b.BookID " +
 		"WHERE p.ID=?"
 	rows, err := Query(db, stmt, id)
 	if err != nil {
@@ -113,12 +112,12 @@ func FindProjectByID(db DB, id int) (*Project, bool, error) {
 func FindProjectByOwner(db DB, owner int64) ([]Project, error) {
 	const stmt = "SELECT p.ID,p.Pages," +
 		"b.BookID,b.Year,b.Author,b.Title,b.Description,b.URI," +
-		"COALESCE(b.ProfilerURL,''),b.Directory,b.Lang,s.text," +
+		"COALESCE(b.ProfilerURL,''),b.Directory,b.Lang," +
+		"b.profiled,b.extendedlexicon,b.postcorrected," +
 		"u.ID,u.Name,u.Email,u.Institute,u.Admin " +
 		"FROM " + ProjectsTableName + " p JOIN " + UsersTableName +
 		" u ON p.Owner=u.ID JOIN " + BooksTableName +
-		" b ON p.Origin=b.BookID JOIN " + StatusTableName +
-		" s ON b.statusid=s.id " +
+		" b ON p.Origin=b.BookID " +
 		"WHERE p.Owner=?"
 	rows, err := Query(db, stmt, owner)
 	if err != nil {
@@ -136,11 +135,21 @@ func FindProjectByOwner(db DB, owner int64) ([]Project, error) {
 }
 
 func scanProject(rows *sql.Rows, p *Project) error {
-	return rows.Scan(&p.ProjectID, &p.Pages,
+	var pr, e, c bool
+	err := rows.Scan(&p.ProjectID, &p.Pages,
 		&p.BookID, &p.Year, &p.Author, &p.Title, &p.Description, &p.URI,
-		&p.ProfilerURL, &p.Directory, &p.Lang, &p.Status,
+		&p.ProfilerURL, &p.Directory, &p.Lang, &pr, &e, &c,
 		&p.Owner.ID, &p.Owner.Name, &p.Owner.Email,
 		&p.Owner.Institute, &p.Owner.Admin)
+	if err != nil {
+		return err
+	}
+	p.Status = map[string]bool{
+		"profiled":         pr,
+		"extended-lexicon": e,
+		"post-corrected":   c,
+	}
+	return nil
 }
 
 func CreateTableProjectPages(db DB) error {

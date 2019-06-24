@@ -17,14 +17,17 @@ const booksTable = BooksTableName + "(" +
 	"ProfilerURL VARCHAR(255)," +
 	"Directory VARCHAR(255) NOT NULL," +
 	"Lang VARCHAR(50) NOT NULL," +
-	"Status INT REFERENCES status(ID)," +
+	"profiled BOOLEAN DEFAULT(false) NOT NULL," +
+	"extendedlexicon BOOLEAN DEFAULT(false) NOT NULL," +
+	"postcorrected BOOLEAN DEFAULT(false) NOT NULL," +
 	"PRIMARY KEY (BookID)" +
 	");"
 
 type Book struct {
-	BookID, Year                       int
-	Author, Title, Description, Status string
-	URI, ProfilerURL, Directory, Lang  string
+	BookID, Year                      int
+	Status                            map[string]bool
+	Author, Title, Description        string
+	URI, ProfilerURL, Directory, Lang string
 }
 
 // CreateTableBooks the database table books if it does not already
@@ -37,11 +40,13 @@ func CreateTableBooks(db DB) error {
 
 func InsertBook(db DB, book *Book) error {
 	const stmt = "INSERT INTO " + BooksTableName +
-		"(BookID,Author,Title,Year,Description,URI,ProfilerURL,Directory,Lang,Status)" +
-		"VALUES(?,?,?,?,?,?,?,?,?,?)"
+		"(BookID,Author,Title,Year,Description,URI,ProfilerURL,Directory,Lang," +
+		"profiled,extendedlexicon,postcorrected)" +
+		"VALUES(?,?,?,?,?,?,?,?,?,?,?,?)"
 	_, err := Exec(db, stmt, book.BookID, book.Author, book.Title,
 		book.Year, book.Description,
-		book.URI, book.ProfilerURL, book.Directory, book.Lang, StatusIDEmpty)
+		book.URI, book.ProfilerURL, book.Directory, book.Lang,
+		book.Status["profiled"], book.Status["extended-lexicon"], book.Status["post-corrected"])
 	return err
 }
 

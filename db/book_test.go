@@ -19,7 +19,11 @@ func newTestBook(t *testing.T, db DB, id int) *Book {
 		ProfilerURL: fmt.Sprintf("book_profiler_url_%d", id),
 		Directory:   fmt.Sprintf("book_directory_%d", id),
 		Lang:        fmt.Sprintf("book_lang_%d", id),
-		Status:      StatusEmpty,
+		Status: map[string]bool{
+			"profiled":         false,
+			"extended-lexicon": false,
+			"post-corrected":   false,
+		},
 	}
 	err := InsertBook(db, book)
 	if err != nil {
