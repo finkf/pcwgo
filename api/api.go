@@ -101,18 +101,18 @@ type BookWithPages struct {
 
 // Book defines the response data for books.
 type Book struct {
-	Author      string `json:"author"`
-	Title       string `json:"title"`
-	Language    string `json:"language"`
-	Status      string `json:"status"`
-	ProfilerURL string `json:"profilerUrl"`
-	Description string `json:"description"`
-	Year        int    `json:"year"`
-	BookID      int    `json:"bookId"`
-	ProjectID   int    `json:"projectId"`
-	Pages       int    `json:"pages"`
-	PageIDs     []int  `json:"pageIds"`
-	IsBook      bool   `json:"isBook"`
+	Author      string          `json:"author"`
+	Title       string          `json:"title"`
+	Language    string          `json:"language"`
+	Status      map[string]bool `json:"status"`
+	ProfilerURL string          `json:"profilerUrl"`
+	Description string          `json:"description"`
+	Year        int             `json:"year"`
+	BookID      int             `json:"bookId"`
+	ProjectID   int             `json:"projectId"`
+	Pages       int             `json:"pages"`
+	PageIDs     []int           `json:"pageIds"`
+	IsBook      bool            `json:"isBook"`
 }
 
 // Books defines a list of books.
