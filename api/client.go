@@ -360,11 +360,12 @@ func (c Client) GetOCRModels(bookID int) (Models, error) {
 	return models, c.get(url, &models)
 }
 
-// PostOCRModel runs the ocr over the given book or project.  If train
-// is true, a model is trained on the ground truth data.
-func (c Client) PostOCRModel(bid, pid, lid int, name string) (Job, error) {
+// Predict runs the OCR prediction with the given model over the given
+// book or project pages and/or lines.  If the give line and/or page
+// ids are equal to zero the whole page and/or project are predicted.
+func (c Client) Predict(bid, pid, lid int, name string) (Job, error) {
 	model := Model{Name: name}
-	prefix := "/ocr"
+	prefix := "/ocr/predict"
 	if lid != 0 {
 		prefix += linePath(bid, pid, lid)
 	} else if pid != 0 {
@@ -373,6 +374,15 @@ func (c Client) PostOCRModel(bid, pid, lid int, name string) (Job, error) {
 		prefix += bookPath(bid)
 	}
 	url := c.url(prefix, Auth, c.Session.Auth)
+	var job Job
+	return job, c.post(url, model, &job)
+}
+
+// Train trains a new model using the given model as base on the given
+// project.
+func (c Client) Train(bid int, name string) (Job, error) {
+	model := Model{Name: name}
+	url := c.url("/ocr/train"+bookPath(bid), Auth, c.Session.Auth)
 	var job Job
 	return job, c.post(url, model, &job)
 }
