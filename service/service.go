@@ -258,7 +258,7 @@ func WithAuth(f HandlerFunc) HandlerFunc {
 			return
 		}
 		if !found {
-			ErrorResponse(w, http.StatusForbidden,
+			ErrorResponse(w, http.StatusUnauthorized,
 				"cannot authenticate: invalid authentification: %s", auth)
 			return
 		}
