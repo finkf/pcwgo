@@ -12,6 +12,7 @@ type DB interface {
 	Exec(string, ...interface{}) (sql.Result, error)
 	Query(string, ...interface{}) (*sql.Rows, error)
 	Begin() (*sql.Tx, error)
+	Prepare(string) (*sql.Stmt, error)
 }
 
 // Exec calls Exec on the given DB handle. The given args are logged.
@@ -58,6 +59,13 @@ func (t *Transaction) Query(stmt string, args ...interface{}) (*sql.Rows, error)
 		return nil, fmt.Errorf("cannot query: transaction error: %v", t.err)
 	}
 	return t.tx.Query(stmt, args...)
+}
+
+func (t *Transaction) Prepare(query string) (*sql.Stmt, error) {
+	if t.err != nil {
+		return nil, t.err
+	}
+	return t.tx.Prepare(query)
 }
 
 // Begin return this transaction's Tx object with all active errors
