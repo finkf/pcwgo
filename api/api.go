@@ -101,18 +101,19 @@ type BookWithPages struct {
 
 // Book defines the response data for books.
 type Book struct {
-	Author      string          `json:"author"`
-	Title       string          `json:"title"`
-	Language    string          `json:"language"`
-	Status      map[string]bool `json:"status"`
-	ProfilerURL string          `json:"profilerUrl"`
-	Description string          `json:"description"`
-	Year        int             `json:"year"`
-	BookID      int             `json:"bookId"`
-	ProjectID   int             `json:"projectId"`
-	Pages       int             `json:"pages"`
-	PageIDs     []int           `json:"pageIds"`
-	IsBook      bool            `json:"isBook"`
+	Author       string          `json:"author"`
+	Title        string          `json:"title"`
+	Language     string          `json:"language"`
+	Status       map[string]bool `json:"status"`
+	ProfilerURL  string          `json:"profilerUrl"`
+	Description  string          `json:"description"`
+	HistPatterns string          `json:"histPatterns"`
+	Year         int             `json:"year"`
+	BookID       int             `json:"bookId"`
+	ProjectID    int             `json:"projectId"`
+	Pages        int             `json:"pages"`
+	PageIDs      []int           `json:"pageIds"`
+	IsBook       bool            `json:"isBook"`
 }
 
 // Books defines a list of books.
@@ -169,6 +170,13 @@ type Token struct {
 	IsNormal             bool      `json:"isNormal"`
 	IsMatch              bool      `json:"match"`
 	Box                  Box       `json:"box"`
+}
+
+// CharMap represents a freqency list of characters.
+type CharMap struct {
+	ProjectID int            `json:"projectId"`
+	BookID    int            `json:"bookId"`
+	CharMap   map[string]int `json:"charMap"`
 }
 
 // Tokens defines the tokens on a line.

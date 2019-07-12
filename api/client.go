@@ -388,6 +388,14 @@ func (c Client) OCRTrain(bid int, name string) (Job, error) {
 	return job, c.post(url, model, &job)
 }
 
+// GetCharMap returns the frequency map of characters for the given
+// book.
+func (c Client) GetCharMap(bid int, filter string) (CharMap, error) {
+	url := c.url(bookPath(bid)+"/charmap", Auth, c.Session.Auth, "filter", filter)
+	var res CharMap
+	return res, c.get(url, &res)
+}
+
 // Raw sends a get request to the given path and writes the raw
 // response content into the given writer.
 func (c Client) Raw(path string, out io.Writer) error {
