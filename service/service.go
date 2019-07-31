@@ -282,7 +282,7 @@ func WithLog(f http.HandlerFunc) http.HandlerFunc {
 // response header and sends a json-formatted response object.
 func ErrorResponse(w http.ResponseWriter, s int, f string, args ...interface{}) {
 	message := fmt.Sprintf(f, args...)
-	log.Debug(message)
+	log.Infof("error: %s", message)
 	status := http.StatusText(s)
 	w.Header().Set("Content-Type", "application/json") // set Content-Type before call to WriteHeader
 	w.WriteHeader(s)
