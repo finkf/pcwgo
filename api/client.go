@@ -79,7 +79,8 @@ func Login(host, email, password string) (*Client, error) {
 	return c, nil
 }
 
-func (c Client) getLogin() (Session, error) {
+// GetLogin returns the session of the authentificated user.
+func (c Client) GetLogin() (Session, error) {
 	var s Session
 	err := c.get(c.url("/login", Auth, c.Session.Auth), &s)
 	return s, err
@@ -118,6 +119,11 @@ func (c Client) PostUser(u CreateUserRequest) (User, error) {
 	url := c.url("/users", Auth, c.Session.Auth)
 	err := c.post(url, u, &res)
 	return res, err
+}
+
+// DeleteUser deletes the user with the given id.
+func (c Client) DeleteUser(id int64) error {
+	return c.delete(c.url(userPath(id), Auth, c.Session.Auth))
 }
 
 // GetAPIVersion returns the API version of the pocoweb server.
@@ -159,6 +165,12 @@ func (c Client) GetBooks() (*Books, error) {
 	return &books, err
 }
 
+// DeletePage deletes the given page.
+func (c Client) DeleteBook(bookID int) error {
+	url := c.url(bookPath(bookID), Auth, c.Session.Auth)
+	return c.delete(url)
+}
+
 // GetPage returns the page with the given ids.
 func (c Client) GetPage(bookID, pageID int) (*Page, error) {
 	var page Page
@@ -189,7 +201,7 @@ func (c Client) PostLine(bookID, pageID, lineID int, cor Correction) (*Line, err
 	return &line, err
 }
 
-// DeleteLine deletes the given line.
+// DeleteLine deletes the given line, page or .
 func (c Client) DeleteLine(bookID, pageID, lineID int) error {
 	url := c.url(linePath(bookID, pageID, lineID), Auth, c.Session.Auth)
 	return c.delete(url)
@@ -238,27 +250,35 @@ func (c Client) GetAdaptiveTokens(bookID int) (AdaptiveTokens, error) {
 }
 
 // Split splits a project.
-func (c Client) Split(pid, n int, random bool) (*Books, error) {
-	url := c.url(bookPath(pid)+"/split", Auth, c.Session.Auth)
-	split := struct {
-		N int  `json:"n"`
-		R bool `json:"random"`
-	}{N: n, R: random}
-	var books Books
-	err := c.post(url, split, &books)
-	return &books, err
+func (c Client) Split(pid int, random bool, uid int, ids ...int) (SplitPackages, error) {
+	url := c.url("/pkg/split"+bookPath(pid), Auth, c.Session.Auth)
+	post := SplitRequest{
+		UserIDs: append(append([]int{}, uid), ids...),
+		Random:  random,
+	}
+	var packages SplitPackages
+	err := c.post(url, post, &packages)
+	return packages, err
 }
 
-// Assign assigns a project to another user.
-func (c Client) Assign(pid, uid int) error {
-	url := c.url(bookPath(pid)+"/assign", Auth, c.Session.Auth,
-		"uid", fmt.Sprintf("%d", uid))
+// AssignTo assigns a package to another user.  User must be an admin.
+func (c Client) AssignTo(pid, uid int) error {
+	url := c.url("/pkg/assign"+bookPath(pid),
+		Auth, c.Session.Auth, "assignto", strconv.Itoa(uid))
 	return c.get(url, nil)
 }
 
-// Finish reassigns a project back to its original owner.
-func (c Client) Finish(pid int) error {
-	url := c.url(bookPath(pid)+"/finish", Auth, c.Session.Auth)
+// AssignBack assigns a package back to its original user. User must
+// own the package.
+func (c Client) AssignBack(pid int) error {
+	url := c.url("/pkg/assign"+bookPath(pid), Auth, c.Session.Auth)
+	return c.get(url, nil)
+}
+
+// TakeBack takes all packages of the given project back and reassigns
+// them to the project's owner.  Only admins can take back projects.
+func (c Client) TakeBack(pid int) error {
+	url := c.url("/pkg/takeback"+bookPath(pid), Auth, c.Session.Auth)
 	return c.get(url, nil)
 }
 
