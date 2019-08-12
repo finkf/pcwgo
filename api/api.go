@@ -70,6 +70,25 @@ func (s Session) String() string {
 		s.User, s.Auth, time.Unix(s.Expires, 0).Format("2006-01-02:15:04"))
 }
 
+// SplitRequest defines the post data for split requests.
+type SplitRequest struct {
+	UserIDs []int `json:"userIds"`
+	Random  bool  `json:"random"`
+}
+
+// SplitPackages defines the response data of split requests.
+type SplitPackages struct {
+	BookID   int            `json:"bookId"`
+	Packages []SplitPackage `json:"projects"`
+}
+
+// SplitPackage defines the data for one split package.
+type SplitPackage struct {
+	PageIDs   []int `json:"pageIds"`
+	ProjectID int   `json:"projectId"`
+	Owner     int   `json:"owner"`
+}
+
 // User defines basic users.
 type User struct {
 	Name      string `json:"name"`
@@ -191,7 +210,7 @@ type Box struct {
 	Top    int `json:"top"`
 	Bottom int `json:"bottom"`
 	Width  int `json:"width"`
-	Height int `json:"heigth"`
+	Height int `json:"height"`
 }
 
 // SearchResults defines the results for token searches.
