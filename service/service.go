@@ -245,7 +245,7 @@ func parseInt(str string) (int, string, error) {
 func WithAuth(f HandlerFunc) HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request, d *Data) {
 		if len(r.URL.Query()["auth"]) != 1 {
-			ErrorResponse(w, http.StatusForbidden,
+			ErrorResponse(w, http.StatusUnauthorized,
 				"cannot authenticate: missing auth parameter")
 			return
 		}
@@ -264,6 +264,12 @@ func WithAuth(f HandlerFunc) HandlerFunc {
 		}
 		log.Infof("user %s authenticated: %s (expires: %s)",
 			s.User, s.Auth, time.Unix(s.Expires, 0).Format(time.RFC3339))
+		if s.Expired() {
+			ErrorResponse(w, http.StatusUnauthorized,
+				"cannot authenticate: session expired: %s",
+				time.Unix(s.Expires, 0).Format(time.RFC3339))
+			return
+		}
 		d.Session = s
 		f(w, r, d)
 	}
