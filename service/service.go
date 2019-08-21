@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bluele/gcache"
 	"github.com/finkf/pcwgo/api"
 	"github.com/finkf/pcwgo/db"
 	_ "github.com/go-sql-driver/mysql"
@@ -53,9 +52,7 @@ func Init(dsn string) error {
 	// pool.SetMaxOpenConns(100)
 	// pool.SetConnMaxLifetime(100)
 	// pool.SetMaxIdleConns(10)
-	// setup caches
-	projectCache = gcache.New(ProjectCacheSize).LoaderFunc(loadProject).Build()
-	authCache = gcache.New(AuthCacheSize).LoaderFunc(loadSession).Build()
+
 	// wait for the database and return
 	return wait()
 }
@@ -111,7 +108,7 @@ func WithProject(f HandlerFunc) HandlerFunc {
 			ErrorResponse(w, http.StatusNotFound, "invalid book ID: %s", r.URL)
 			return
 		}
-		project, found, err := getCachedProject(id)
+		p, found, err := db.FindProjectByID(pool, id)
 		if err != nil {
 			ErrorResponse(w, http.StatusInternalServerError,
 				"cannot find book ID %d: %v", id, err)
@@ -122,30 +119,8 @@ func WithProject(f HandlerFunc) HandlerFunc {
 				"cannot find book ID %d", id)
 			return
 		}
-		d.Project = project
+		d.Project = p
 		f(w, r, d)
-	}
-}
-
-// DropProject removes the active project from the cache if it is
-// non-nil.  Should be joined after WithProject.
-func DropProject(f HandlerFunc) HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request, d *Data) {
-		f(w, r, d)
-		if d.Project != nil {
-			RemoveProject(d.Project)
-		}
-	}
-}
-
-// DropSession removes the active session from the cache if it is
-// non-nil.  Should be joined after WithAuth.
-func DropSession(f HandlerFunc) HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request, d *Data) {
-		f(w, r, d)
-		if d.Session != nil {
-			RemoveSession(d.Session)
-		}
 	}
 }
 
@@ -251,7 +226,7 @@ func WithAuth(f HandlerFunc) HandlerFunc {
 		}
 		auth := r.URL.Query()["auth"][0]
 		log.Debugf("authenticating with %s", auth)
-		s, found, err := getCachedSession(auth)
+		s, found, err := db.FindSessionByID(pool, auth)
 		if err != nil {
 			ErrorResponse(w, http.StatusInternalServerError,
 				"cannot authenticate: %v", err)
