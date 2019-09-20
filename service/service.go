@@ -234,7 +234,7 @@ func WithAuth(f HandlerFunc) HandlerFunc {
 		}
 		if !found {
 			ErrorResponse(w, http.StatusUnauthorized,
-				"cannot authenticate: invalid authentification: %s", auth)
+				"cannot authenticate: invalid authentification")
 			return
 		}
 		log.Infof("user %s authenticated: %s (expires: %s)",
