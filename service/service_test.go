@@ -1,7 +1,7 @@
 package service
 
 import (
-	"reflect"
+	"context"
 	"regexp"
 	"testing"
 )
@@ -29,7 +29,7 @@ func TestParseIDMap(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.url, func(t *testing.T) {
-			got, err := parseIDMap(tc.url, tc.keys...)
+			ctx, err := idContext(context.Background(), tc.url, tc.keys...)
 			if err == nil && tc.wantErr {
 				t.Fatalf("expected an error")
 			}
@@ -39,8 +39,10 @@ func TestParseIDMap(t *testing.T) {
 			if tc.wantErr {
 				return
 			}
-			if !reflect.DeepEqual(got, tc.want) {
-				t.Fatalf("expected %v; got %v", tc.want, got)
+			for k, v := range tc.want {
+				if got := ctx.Value(k); got != v {
+					t.Fatalf("expected %v; got %v", v, got)
+				}
 			}
 		})
 	}

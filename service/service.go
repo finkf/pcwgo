@@ -2,6 +2,7 @@ package service // import "github.com/finkf/pcwgo/service"
 
 import (
 	"compress/gzip"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -96,49 +97,51 @@ type Data struct {
 
 // HandlerFunc defines the callback function to handle callbacks with
 // data.
-type HandlerFunc func(http.ResponseWriter, *http.Request, *Data)
+type HandlerFunc func(context.Context, http.ResponseWriter, *http.Request)
 
-// WithProject loads the book data of the given book id in the url and
-// calls the given callback function.
+// WithProject loads the project data for the given project id and
+// puts it into the context using "project" as key.  Then it calls the
+// given handler function.
 func WithProject(f HandlerFunc) HandlerFunc {
 	re := regexp.MustCompile(`/books/(\d+)`)
-	return func(w http.ResponseWriter, r *http.Request, d *Data) {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		var id int
 		if n := ParseIDs(r.URL.String(), re, &id); n != 1 {
-			ErrorResponse(w, http.StatusNotFound, "invalid book ID: %s", r.URL)
+			ErrorResponse(w, http.StatusNotFound, "cannot find project ID: %s", r.URL)
 			return
 		}
 		p, found, err := db.FindProjectByID(pool, id)
 		if err != nil {
 			ErrorResponse(w, http.StatusInternalServerError,
-				"cannot find book ID %d: %v", id, err)
+				"cannot find project ID %d: %v", id, err)
 			return
 		}
 		if !found {
 			ErrorResponse(w, http.StatusNotFound,
-				"cannot find book ID %d", id)
+				"cannot find project ID %d", id)
 			return
 		}
-		d.Project = p
-		f(w, r, d)
+		f(context.WithValue(ctx, "project", p), w, r)
 	}
 }
 
 // WithMethods dispatches a given pair of the request methods to the
 // given HandlerFunc with an empty data context.  The first element
 // must be of type string, the second argument must be of type
-// HandlerFunc.
+// HandlerFunc.  The function panics if it encounteres an invalid
+// type.
 func WithMethods(args ...interface{}) http.HandlerFunc {
 	if len(args)%2 != 0 {
 		panic("invalid number of arguments")
 	}
 	methods := make(map[string]HandlerFunc, len(args)%2)
 	for i := 0; i < len(args); i += 2 {
+		method := args[i].(string) // must be a string
 		switch t := args[i+1].(type) {
 		case HandlerFunc:
-			methods[args[i].(string)] = t
-		case func(http.ResponseWriter, *http.Request, *Data):
-			methods[args[i].(string)] = HandlerFunc(t)
+			methods[method] = t
+		case func(context.Context, http.ResponseWriter, *http.Request):
+			methods[method] = HandlerFunc(t)
 		default:
 			log.Fatalf("invalid type in WithMethods: %T", t)
 		}
@@ -150,7 +153,33 @@ func WithMethods(args ...interface{}) http.HandlerFunc {
 				"invalid method: %s", r.Method)
 			return
 		}
-		f(w, r, &Data{})
+		f(context.Background(), w, r)
+	}
+}
+
+// WithUser extracts the "/users/<numeric id>" part from the url,
+// loads it and puts it into the context with the key "user".
+func WithUser(f HandlerFunc) HandlerFunc {
+	re := regexp.MustCompile(`/users/(\d+)`)
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		var userID int
+		if n := ParseIDs(r.URL.String(), re, &userID); n != 1 {
+			ErrorResponse(w, http.StatusNotFound,
+				"cannot find: %s", r.URL.String())
+			return
+		}
+		user, found, err := db.FindUserByID(pool, int64(userID))
+		if err != nil {
+			ErrorResponse(w, http.StatusInternalServerError,
+				"cannot lookup user: %v", err)
+			return
+		}
+		if !found {
+			ErrorResponse(w, http.StatusNotFound,
+				"cannot find user ID: %d", userID)
+			return
+		}
+		f(context.WithValue(ctx, "user", user), w, r)
 	}
 }
 
@@ -160,22 +189,20 @@ func WithMethods(args ...interface{}) http.HandlerFunc {
 // is then not inserted intot the ID map if it is not present in the
 // request's URL).
 func WithIDs(f HandlerFunc, keys ...string) HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request, d *Data) {
-		ids, err := parseIDMap(r.URL.String(), keys...)
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		ctx, err := idContext(ctx, r.URL.String(), keys...)
 		if err != nil {
 			ErrorResponse(w, http.StatusNotFound,
 				"cannot parse ids: %v", err)
 			return
 		}
-		d.IDs = ids
-		f(w, r, d)
+		f(ctx, w, r)
 	}
 }
 
-// Parse (key,int) pairs from an url `/key/int/...` in the given order
-// of keys.
-func parseIDMap(url string, keys ...string) (map[string]int, error) {
-	res := make(map[string]int, len(keys))
+// Parse (key,int) pairs from an url `/key/int/...` in the given
+// order of keys and put them into the given context.
+func idContext(ctx context.Context, url string, keys ...string) (context.Context, error) {
 	for _, key := range keys {
 		var opt bool
 		if strings.HasPrefix(key, "?") {
@@ -185,7 +212,7 @@ func parseIDMap(url string, keys ...string) (map[string]int, error) {
 		search := "/" + key + "/"
 		pos := strings.Index(url, search)
 		if pos == -1 && !opt {
-			return nil, fmt.Errorf("cannot find key: %s", key)
+			return nil, fmt.Errorf("cannot find required key: %s", key)
 		}
 		if pos == -1 && opt {
 			continue
@@ -194,10 +221,10 @@ func parseIDMap(url string, keys ...string) (map[string]int, error) {
 		if err != nil {
 			return nil, err
 		}
-		res[key] = id
+		ctx = context.WithValue(ctx, key, id)
 		url = rest
 	}
-	return res, nil
+	return ctx, nil
 }
 
 // Parse an integer from str to the first `/` or to the end of the
@@ -216,9 +243,11 @@ func parseInt(str string) (int, string, error) {
 
 // WithAuth checks if the given request contains a valid
 // authentication token.  If not an appropriate error is returned
-// before the given callback function is called.
+// before the given callback function is called.  If the
+// authentification succeeds, the session is put into the context as
+// "auth".
 func WithAuth(f HandlerFunc) HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request, d *Data) {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		if len(r.URL.Query()["auth"]) != 1 {
 			ErrorResponse(w, http.StatusUnauthorized,
 				"cannot authenticate: missing auth parameter")
@@ -245,8 +274,7 @@ func WithAuth(f HandlerFunc) HandlerFunc {
 				time.Unix(s.Expires, 0).Format(time.RFC3339))
 			return
 		}
-		d.Session = s
-		f(w, r, d)
+		f(context.WithValue(ctx, "auth", s), w, r)
 	}
 }
 
