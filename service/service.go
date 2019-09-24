@@ -30,6 +30,16 @@ var Wait = 2 * time.Second
 // internal sql handle
 var pool *sql.DB
 
+// InitDebug sets up the database connection pool using the supplied
+// DSN `user:pass@proto(host/dbname` and sets the log level to debug
+// if debug=true.  It then calls Init(dsn) and returns its result.
+func InitDebug(dsn string, debug bool) error {
+	if debug {
+		log.SetLevel(log.DebugLevel)
+	}
+	return Init(dsn)
+}
+
 // Init sets up the database connection pool using the supplied DSN
 // `user:pass@proto(host/dbname`.  Init waits for the databsase to be
 // online.  It is not save to call Init from different go routines.
