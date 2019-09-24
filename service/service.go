@@ -54,16 +54,15 @@ func Init(dsn string) error {
 	// pool.SetMaxIdleConns(10)
 
 	// wait for the database and return
-	return wait()
+	return wait(MaxRetries, Wait)
 }
 
-func wait() error {
-	for i := 0; MaxRetries == 0 || i < MaxRetries; i++ {
-		stmt := "SELECT id FROM users"
-		rows, err := db.Query(pool, stmt)
+func wait(retries int, sleep time.Duration) error {
+	for i := 0; retries == 0 || i < retries; i++ {
+		rows, err := db.Query(pool, "SELECT id FROM users")
 		if err != nil {
 			log.Debugf("error connecting to the database: %v", err)
-			time.Sleep(Wait)
+			time.Sleep(sleep)
 			continue
 		}
 		// successfully connected to the database
@@ -71,8 +70,7 @@ func wait() error {
 		log.Debugf("connected sucessfully to database")
 		return nil
 	}
-	return fmt.Errorf("failed to connect to database after %d attempts",
-		MaxRetries)
+	return fmt.Errorf("failed to connect to database after %d attempts", retries)
 }
 
 // Close closes the database pool.
