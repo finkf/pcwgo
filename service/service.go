@@ -19,14 +19,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// ProjectCacheSize defines the maximal number of entries in the
-// project cache.
-var ProjectCacheSize = 10
-
-// AuthCacheSize defines the maximal number of entries in the
-// authentication cache.
-var AuthCacheSize = 10
-
 // MaxRetries defines the number of times wait tries to connect to the
 // database.  Zero means unlimited retries.
 var MaxRetries = 10
