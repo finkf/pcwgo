@@ -114,12 +114,12 @@ func issep(char Char) bool {
 		c = char.OCR
 	}
 	// a deletion (cor = -1, ocr = char) is not a sep
-	return c != -1 && (unicode.IsSpace(c) || unicode.IsPunct(c))
+	return c != -1 && (unicode.IsSpace(c)
 }
 
 // NextWord returns the next word and the rest in this character
-// sequence.  A word is any sequence of non whitespace non punctuation
-// characters.
+// sequence.  A word/token is any sequence of non whitespace
+// characters.  Deletions are ignored.
 func (cs Chars) NextWord() (word, rest Chars) {
 	for len(cs) > 0 && issep(cs[0]) {
 		cs = cs[1:]
