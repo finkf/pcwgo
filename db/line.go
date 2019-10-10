@@ -34,7 +34,7 @@ const tableContents = ContentsTableName + " (" +
 // Char defines a character
 type Char struct {
 	Cor, OCR rune
-	Cut      int
+	Cut, Seq int
 	Conf     float64
 }
 
@@ -157,7 +157,7 @@ func UpdateLine(db DB, line Line) error {
 func FindLineByID(db DB, bookID, pageID, lineID int) (*Line, bool, error) {
 	const stmt1 = "SELECT ImagePath,LLeft,LRight,LTop,LBottom FROM " +
 		TextLinesTableName + " WHERE BookID=? AND PageID=? AND LineID=?"
-	const stmt2 = "SELECT OCR,Cor,Cut,Conf FROM " + ContentsTableName +
+	const stmt2 = "SELECT OCR,Cor,Cut,Conf,Seq FROM " + ContentsTableName +
 		" WHERE BookID=? AND PageID=? AND LineID=? ORDER BY Seq"
 	// query for textlines content
 	rows, err := Query(db, stmt1, bookID, pageID, lineID)
@@ -189,7 +189,7 @@ func FindLineByID(db DB, bookID, pageID, lineID int) (*Line, bool, error) {
 }
 
 func scanChar(rows *sql.Rows, char *Char) error {
-	return rows.Scan(&char.OCR, &char.Cor, &char.Cut, &char.Conf)
+	return rows.Scan(&char.OCR, &char.Cor, &char.Cut, &char.Conf, &char.Seq)
 }
 
 func scanLine(rows *sql.Rows, line *Line) error {
