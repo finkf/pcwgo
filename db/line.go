@@ -114,7 +114,7 @@ func issep(char Char) bool {
 		c = char.OCR
 	}
 	// a deletion (cor = -1, ocr = char) is not a sep
-	return c != -1 && (unicode.IsSpace(c)
+	return c != -1 && unicode.IsSpace(c)
 }
 
 // NextWord returns the next word and the rest in this character
