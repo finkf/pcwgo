@@ -153,17 +153,6 @@ func (c Client) PutBook(book Book) (*Book, error) {
 	return &newBook, err
 }
 
-// Get returns the requested obeject defined by the given id.  The
-// result of the get request is written into out.  Out must be a
-// pointer to a struct that the response can be serialized into.
-func (c Client) Get(id IDer, out interface{}) error {
-	url := c.url(id.ID(), Auth, c.Session.Auth)
-	if err := c.get(url, data); err != nil {
-		return fmt.Errorf("cannot GET: %v", err)
-	}
-	return nil
-}
-
 // GetBook returns the book with the given id.
 func (c Client) GetBook(bookID int) (*Book, error) {
 	url := c.url(bookPath(bookID), Auth, c.Session.Auth)
