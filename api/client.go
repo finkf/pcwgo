@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"compress/gzip"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"image"
@@ -18,65 +19,49 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// DefaultWebHost returns the default host address of the main
-// webserver that serves the images.  It just strips the port (if any)
-// from the given host address.
-func DefaultWebHost(host string) string {
-	if pos := strings.LastIndex(host, ":"); pos != -1 {
-		return host[:pos]
-	}
-	return host
-}
-
 // Client implements the api calls for the pcw backend.
 // Use Login to initalize the client.
 type Client struct {
-	client        *http.Client
-	Host, WebHost string
-	Session       Session // active session
-	Skip, Max     int     // skip and max parameters for queries
+	client  *http.Client
+	Host    string
+	Session Session // active session
 }
 
 // NewClient creates a new client with the given host (and it default
 // web host).
-func NewClient(host string) *Client {
+func NewClient(host string, skipVerify bool) *Client {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: skipVerify},
+	}
 	return &Client{
-		Host:    host,
-		WebHost: DefaultWebHost(host),
-		client:  &http.Client{},
+		Host:   host,
+		client: &http.Client{Transport: tr},
 	}
 }
 
 // Authenticate creates a new Client from a given auth-token.
-func Authenticate(host, authToken string) *Client {
-	c := NewClient(host)
+func Authenticate(host, authToken string, skipVerify bool) *Client {
+	c := NewClient(host, skipVerify)
 	c.Session.Auth = authToken
 	return c
 }
 
 // Login creates a new Client and authenticates with the given
 // username and password.
-func Login(host, email, password string) (*Client, error) {
-	// tr := &http.Transport{
-	// 	TLSClientConfig: &tls.Config{InsecureSkipVerify: skipVerify},
-	// }
-	c := NewClient(host)
-	// c := &Client{
-	// 	client: &http.Client{}, //Transport: tr},
-	// 	Host:   host,
-	// }
+func Login(host, email, password string, skipVerify bool) (*Client, error) {
+	client := NewClient(host, skipVerify)
 	login := LoginRequest{
 		Email:    email,
 		Password: password,
 	}
 	var s Session
-	err := c.post(c.url("/login"), login, &s)
+	err := client.post(client.url("/login"), login, &s)
 	if err != nil {
 		return nil, err
 	}
 	log.Debugf("session: %s", s)
-	c.Session = s
-	return c, nil
+	client.Session = s
+	return client, nil
 }
 
 // GetLogin returns the session of the authentificated user.
@@ -141,12 +126,42 @@ func (c Client) PostZIP(zip io.Reader) (*Book, error) {
 	return &book, err
 }
 
-// PostBook updates the given Book and returns it.
-func (c Client) PostBook(book Book) (*Book, error) {
+// PostBook uploads a zipped OCR project and the given metadata.  It
+// returns the newly created book.
+func (c Client) PostBook(zip io.Reader, book Book) (*Book, error) {
+	url := c.url("/books",
+		Auth, c.Session.Auth,
+		"author", book.Author,
+		"title", book.Title,
+		"language", book.Language,
+		"description", book.Description,
+		"histPatterns", book.HistPatterns,
+		"profilerUrl", book.ProfilerURL,
+		"year", strconv.Itoa(book.Year),
+	)
+	var newBook Book
+	err := c.doPost(url, "application/zip", zip, &newBook)
+	return &newBook, err
+}
+
+// PutBook updates the given book's metadata. It returns the updated
+// book data.
+func (c Client) PutBook(book Book) (*Book, error) {
 	url := c.url(bookPath(book.ProjectID), Auth, c.Session.Auth)
 	var newBook Book
-	err := c.post(url, book, &newBook)
+	err := c.put(url, book, &newBook)
 	return &newBook, err
+}
+
+// Get returns the requested obeject defined by the given id.  The
+// result of the get request is written into out.  Out must be a
+// pointer to a struct that the response can be serialized into.
+func (c Client) Get(id IDer, out interface{}) error {
+	url := c.url(id.ID(), Auth, c.Session.Auth)
+	if err := c.get(url, data); err != nil {
+		return fmt.Errorf("cannot GET: %v", err)
+	}
+	return nil
 }
 
 // GetBook returns the book with the given id.
@@ -179,6 +194,22 @@ func (c Client) GetPage(bookID, pageID int) (*Page, error) {
 	return &page, err
 }
 
+// GetFirstPage returns the first page of the given book.
+func (c Client) GetFirstPage(bookID int) (*Page, error) {
+	var page Page
+	url := c.url(bookPath(bookID)+"/pages/first", Auth, c.Session.Auth)
+	err := c.get(url, &page)
+	return &page, err
+}
+
+// GetLastPage returns the last page of the given book.
+func (c Client) GetLastPage(bookID int) (*Page, error) {
+	var page Page
+	url := c.url(bookPath(bookID)+"/pages/last", Auth, c.Session.Auth)
+	err := c.get(url, &page)
+	return &page, err
+}
+
 // DeletePage deletes the given page.
 func (c Client) DeletePage(bookID, pageID int) error {
 	url := c.url(pagePath(bookID, pageID), Auth, c.Session.Auth)
@@ -194,10 +225,13 @@ func (c Client) GetLine(bookID, pageID, lineID int) (*Line, error) {
 }
 
 // PostLine posts new content to the given line.
-func (c Client) PostLine(bookID, pageID, lineID int, cor Correction) (*Line, error) {
-	var line Line
+func (c Client) PostLine(bookID, pageID, lineID int, cor string) (*Line, error) {
 	url := c.url(linePath(bookID, pageID, lineID), Auth, c.Session.Auth)
-	err := c.post(url, cor, &line)
+	post := struct {
+		Correction string `json:"correction"`
+	}{cor}
+	var line Line
+	err := c.post(url, post, &line)
 	return &line, err
 }
 
@@ -207,38 +241,71 @@ func (c Client) DeleteLine(bookID, pageID, lineID int) error {
 	return c.delete(url)
 }
 
-// GetTokens returns the tokens for the given line.
-func (c Client) GetTokens(bookID, pageID, lineID int) (Tokens, error) {
-	var tokens Tokens
-	url := c.url(linePath(bookID, pageID, lineID)+"/tokens", Auth, c.Session.Auth)
-	err := c.get(url, &tokens)
-	return tokens, err
+// GetToken returns the token for the given line.
+func (c Client) GetToken(bookID, pageID, lineID, tokenID int) (*Token, error) {
+	var token Token
+	url := c.url(tokenPath(bookID, pageID, lineID, tokenID), Auth, c.Session.Auth)
+	err := c.get(url, &token)
+	return &token, err
 }
 
-// Search searches for one or more tokens.
-func (c Client) Search(bookID int, q string, qs ...string) (*SearchResults, error) {
-	params := []string{Auth, c.Session.Auth, "p", "0",
-		"skip", strconv.Itoa(c.Skip), "max", strconv.Itoa(c.Max), "q", q}
-	for _, x := range qs {
-		params = append(params, "q", x)
-	}
-	url := c.url(bookPath(bookID)+"/search", params...)
-	var res SearchResults
-	err := c.get(url, &res)
-	return &res, err
+// GetTokenLen returns the token with the given length.
+func (c Client) GetTokenLen(bookID, pageID, lineID, tokenID, len int) (*Token, error) {
+	var token Token
+	url := c.url(tokenPath(bookID, pageID, lineID, tokenID),
+		Auth, c.Session.Auth, "len", strconv.Itoa(len))
+	err := c.get(url, &token)
+	return &token, err
 }
 
-// SearchErrorPatterns searches for one or more error patterns.
-func (c Client) SearchErrorPatterns(bookID int, q string, qs ...string) (*SearchResults, error) {
-	params := []string{Auth, c.Session.Auth, "p", "1",
-		"skip", strconv.Itoa(c.Skip), "max", strconv.Itoa(c.Max), "q", q}
-	for _, x := range qs {
-		params = append(params, "q", x)
+// PostToken posts new content to the given token.
+func (c Client) PostToken(bookID, pageID, lineID, tokenID int, cor string) (*Token, error) {
+	url := c.url(tokenPath(bookID, pageID, lineID, tokenID), Auth, c.Session.Auth)
+	post := struct {
+		Correction string `json:"correction"`
+	}{cor}
+	var token Token
+	err := c.post(url, post, &token)
+	return &token, err
+}
+
+// PostTokenLen posts new content to the given token with a specific length.
+func (c Client) PostTokenLen(bookID, pageID, lineID, tokenID, len int, cor string) (*Token, error) {
+	url := c.url(tokenPath(bookID, pageID, lineID, tokenID),
+		Auth, c.Session.Auth, "len", strconv.Itoa(len))
+	post := struct {
+		Correction string `json:"correction"`
+	}{cor}
+	var token Token
+	err := c.post(url, post, &token)
+	return &token, err
+}
+
+// Search is used to configure search requests.
+type Search struct {
+	Qs        []string // query strings
+	Skip, Max int      // skip matches and max matches
+	Pattern   bool     // search for error patterns
+}
+
+func (s Search) params() []string {
+	var ret []string
+	ret = append(ret, "skip", strconv.Itoa(s.Skip))
+	ret = append(ret, "max", strconv.Itoa(s.Max))
+	ret = append(ret, "p", strconv.FormatBool(s.Pattern))
+	for _, q := range s.Qs {
+		ret = append(ret, "q", q)
 	}
+	return ret
+}
+
+// Search searches for tokens or error patterns.
+func (c Client) Search(bookID int, s Search) (*SearchResults, error) {
+	params := append([]string{Auth, c.Session.Auth}, s.params()...)
 	url := c.url(bookPath(bookID)+"/search", params...)
-	var res SearchResults
-	err := c.get(url, &res)
-	return &res, err
+	var ret SearchResults
+	err := c.get(url, &ret)
+	return &ret, err
 }
 
 // GetAdaptiveTokens returns the adaptive tokens for the given book.
@@ -430,10 +497,18 @@ func (c Client) Raw(path string, out io.Writer) error {
 	return err
 }
 
+func (c Client) hostRoot() string {
+	hostURL, err := url.Parse(c.Host)
+	if err != nil {
+		return c.Host
+	}
+	return strings.TrimSuffix(hostURL.String(), hostURL.RequestURI())
+}
+
 // GetLineImage downloads the line image for the given line.  At this
 // point only PNGs are accepted.
 func (c Client) GetLineImage(line *Line) (image.Image, error) {
-	url := c.WebHost + "/" + line.ImgFile
+	url := c.hostRoot() + "/" + line.ImgFile
 	log.Debugf("GET %s", url)
 	res, err := c.client.Get(url)
 	if err != nil {
@@ -461,18 +536,17 @@ func (c Client) Download(pid int) (io.ReadCloser, error) {
 		return nil, fmt.Errorf("cannot download: %v", err)
 	}
 	// download archive
-	log.Debugf("archive path: %s", archive.Archive)
-	xurl = c.WebHost + "/" + archive.Archive +
-		"?" + url.PathEscape(Auth) + "=" + url.PathEscape(c.Session.Auth)
+	xurl = c.hostRoot() + "/" + archive.Archive
 	log.Debugf("GET %s", xurl)
 	res, err := c.client.Get(xurl)
 	if err != nil {
 		return nil, fmt.Errorf("cannot download: %v", err)
 	}
+	log.Debugf("GET %s: %s", xurl, res.Status)
 	// do *not* defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		res.Body.Close()
-		return nil, fmt.Errorf("cannot download: bad response %s", res.Status)
+		return nil, fmt.Errorf("cannot download: bad response: %s", res.Status)
 	}
 	if res.Header.Get("Content-Type") != "application/zip" {
 		res.Body.Close()
@@ -488,6 +562,9 @@ func (c Client) url(path string, keyvals ...string) string {
 	b.WriteString(path)
 	pre := '?'
 	for i := 0; i+1 < len(keyvals); i += 2 {
+		if keyvals[i+1] == "" { // skip empty values
+			continue
+		}
 		b.WriteRune(pre)
 		b.WriteString(url.PathEscape(keyvals[i]))
 		b.WriteRune('=')
@@ -533,17 +610,17 @@ func (c Client) get(url string, out interface{}) error {
 		return err
 	}
 	defer res.Body.Close()
+	log.Debugf("GET %s: %s", url, res.Status)
 	if !valid(res) {
 		return doError(res)
 	}
-	log.Debugf("reponse from server: %s", res.Status)
 	if out == nil {
 		return nil
 	}
-	return decodeJSONMaybeGzipped(res, out)
+	return decodeJSONMaybeZipped(res, out)
 }
 
-func decodeJSONMaybeGzipped(res *http.Response, out interface{}) error {
+func decodeJSONMaybeZipped(res *http.Response, out interface{}) error {
 	var r io.Reader = res.Body
 	if res.Header.Get("Content-Encoding") == "gzip" {
 		log.Debugf("unzipping content")
@@ -553,6 +630,13 @@ func decodeJSONMaybeGzipped(res *http.Response, out interface{}) error {
 		}
 		r = gzip
 	}
+	// log.Debugf("decodeJSON")
+	// x, err := ioutil.ReadAll(r)
+	// if err != nil {
+	// 	return err
+	// }
+	// log.Debugf("decodeJSON")
+	// log.Debugf("raw: %s", string(x))
 	err := json.NewDecoder(r).Decode(out)
 	if err != nil {
 		return fmt.Errorf("cannot decode server response: %v", err)

@@ -41,13 +41,6 @@ type Version struct {
 	Version string `json:"version"`
 }
 
-// Correction defines the post data for correction requests.
-type Correction struct {
-	Replace string `json:"replace"`
-	Query   string `json:"query,omitempty"`
-	Prefix  string `json:"prefix,omitempty"`
-}
-
 // Session defines an authenticates user sessions.  A session is
 // attached to a unique user with and authentication string and an
 // expiration date.
@@ -145,8 +138,8 @@ type Page struct {
 	PageID     int    `json:"pageId"`
 	ProjectID  int    `json:"projectId"`
 	BookID     int    `json:"bookId"`
-	PrevPageKD int    `json:"prevPageId"`
-	NextPageKD int    `json:"nextPageId"`
+	PrevPageID int    `json:"prevPageId"`
+	NextPageID int    `json:"nextPageId"`
 	OCRFile    string `json:"ocrFile"`
 	ImgFile    string `json:"imgFile"`
 	Box        Box    `json:"box"`
@@ -215,16 +208,19 @@ type Box struct {
 
 // SearchResults defines the results for token searches.
 type SearchResults struct {
-	Matches        map[string][]Match `json:"matches"`
-	BookID         int                `json:"bookId"`
-	ProjectID      int                `json:"projectId"`
-	IsErrorPattern bool               `json:"isErrorPattern"`
+	Matches        map[string]Match `json:"matches"`
+	BookID         int              `json:"bookId"`
+	ProjectID      int              `json:"projectId"`
+	Total          int              `json:"total"`
+	Max            int              `json:"max"`
+	Skip           int              `json:"skip"`
+	IsErrorPattern bool             `json:"isErrorPattern"`
 }
 
 // Match defines the matches in the results of searches.
 type Match struct {
-	Line   Line    `json:"line"`
-	Tokens []Token `json:"tokens"`
+	Lines []Line `json:"lines"`
+	Total int    `json:"total"`
 }
 
 // Suggestions defines the profiler's suggestions for tokens.
