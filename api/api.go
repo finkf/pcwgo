@@ -126,6 +126,7 @@ type Book struct {
 	Pages        int             `json:"pages"`
 	PageIDs      []int           `json:"pageIds"`
 	IsBook       bool            `json:"isBook"`
+	Pooled       bool            `json:"pooled"`
 }
 
 // Books defines a list of books.
