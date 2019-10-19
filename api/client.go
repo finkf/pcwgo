@@ -281,18 +281,28 @@ func (c Client) PostTokenLen(bookID, pageID, lineID, tokenID, len int, cor strin
 	return &token, err
 }
 
+// SearchType defines the type of searches
+type SearchType string
+
+// Search types.
+const (
+	TokenSearch   SearchType = "token"
+	PatternSearch SearchType = "pattern"
+	ACSearch      SearchType = "ac"
+)
+
 // Search is used to configure search requests.
 type Search struct {
-	Qs        []string // query strings
-	Skip, Max int      // skip matches and max matches
-	Pattern   bool     // search for error patterns
+	Qs        []string   // query strings
+	Skip, Max int        // skip matches and max matches
+	Type      SearchType // type of the search
 }
 
 func (s Search) params() []string {
 	var ret []string
 	ret = append(ret, "skip", strconv.Itoa(s.Skip))
 	ret = append(ret, "max", strconv.Itoa(s.Max))
-	ret = append(ret, "p", strconv.FormatBool(s.Pattern))
+	ret = append(ret, "t", string(s.Type))
 	for _, q := range s.Qs {
 		ret = append(ret, "q", q)
 	}
