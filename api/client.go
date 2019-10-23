@@ -153,17 +153,6 @@ func (c Client) PutBook(book Book) (*Book, error) {
 	return &newBook, err
 }
 
-// Get returns the requested obeject defined by the given id.  The
-// result of the get request is written into out.  Out must be a
-// pointer to a struct that the response can be serialized into.
-func (c Client) Get(id IDer, out interface{}) error {
-	url := c.url(id.ID(), Auth, c.Session.Auth)
-	if err := c.get(url, data); err != nil {
-		return fmt.Errorf("cannot GET: %v", err)
-	}
-	return nil
-}
-
 // GetBook returns the book with the given id.
 func (c Client) GetBook(bookID int) (*Book, error) {
 	url := c.url(bookPath(bookID), Auth, c.Session.Auth)
@@ -180,7 +169,7 @@ func (c Client) GetBooks() (*Books, error) {
 	return &books, err
 }
 
-// DeletePage deletes the given page.
+// DeleteBook deletes the book the given book.
 func (c Client) DeleteBook(bookID int) error {
 	url := c.url(bookPath(bookID), Auth, c.Session.Auth)
 	return c.delete(url)
@@ -224,14 +213,14 @@ func (c Client) GetLine(bookID, pageID, lineID int) (*Line, error) {
 	return &line, err
 }
 
-// PostLine posts new content to the given line.
-func (c Client) PostLine(bookID, pageID, lineID int, cor string) (*Line, error) {
+// PutLine corrects is used to correct a line.
+func (c Client) PutLine(bookID, pageID, lineID int, cor string) (*Line, error) {
 	url := c.url(linePath(bookID, pageID, lineID), Auth, c.Session.Auth)
 	post := struct {
 		Correction string `json:"correction"`
 	}{cor}
 	var line Line
-	err := c.post(url, post, &line)
+	err := c.put(url, post, &line)
 	return &line, err
 }
 
@@ -250,34 +239,34 @@ func (c Client) GetToken(bookID, pageID, lineID, tokenID int) (*Token, error) {
 }
 
 // GetTokenLen returns the token with the given length.
-func (c Client) GetTokenLen(bookID, pageID, lineID, tokenID, len int) (*Token, error) {
+func (c Client) GetTokenLen(bookID, pageID, lineID, offset, len int) (*Token, error) {
 	var token Token
-	url := c.url(tokenPath(bookID, pageID, lineID, tokenID),
+	url := c.url(tokenPath(bookID, pageID, lineID, offset),
 		Auth, c.Session.Auth, "len", strconv.Itoa(len))
 	err := c.get(url, &token)
 	return &token, err
 }
 
-// PostToken posts new content to the given token.
-func (c Client) PostToken(bookID, pageID, lineID, tokenID int, cor string) (*Token, error) {
+// PutToken corrects a token.
+func (c Client) PutToken(bookID, pageID, lineID, tokenID int, cor string) (*Token, error) {
 	url := c.url(tokenPath(bookID, pageID, lineID, tokenID), Auth, c.Session.Auth)
 	post := struct {
 		Correction string `json:"correction"`
 	}{cor}
 	var token Token
-	err := c.post(url, post, &token)
+	err := c.put(url, post, &token)
 	return &token, err
 }
 
-// PostTokenLen posts new content to the given token with a specific length.
-func (c Client) PostTokenLen(bookID, pageID, lineID, tokenID, len int, cor string) (*Token, error) {
+// PutTokenLen corrects a token of a spcific length.
+func (c Client) PutTokenLen(bookID, pageID, lineID, tokenID, len int, cor string) (*Token, error) {
 	url := c.url(tokenPath(bookID, pageID, lineID, tokenID),
 		Auth, c.Session.Auth, "len", strconv.Itoa(len))
 	post := struct {
 		Correction string `json:"correction"`
 	}{cor}
 	var token Token
-	err := c.post(url, post, &token)
+	err := c.put(url, post, &token)
 	return &token, err
 }
 
@@ -286,9 +275,9 @@ type SearchType string
 
 // Search types.
 const (
-	TokenSearch   SearchType = "token"
-	PatternSearch SearchType = "pattern"
-	ACSearch      SearchType = "ac"
+	SearchToken   SearchType = "token"
+	SearchPattern SearchType = "pattern"
+	SearchAC      SearchType = "ac"
 )
 
 // Search is used to configure search requests.
