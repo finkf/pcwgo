@@ -275,6 +275,8 @@ type AdaptiveTokens struct {
 	AdaptiveTokens []string `json:"adaptiveTokens"`
 }
 
+// ExtendedLexicon defines the object returned as the result for the
+// lexicon extension.
 type ExtendedLexicon struct {
 	BookID    int            `json:"bookId"`
 	ProjectID int            `json:"projectId"`
@@ -288,6 +290,7 @@ type AdditionalLexicon struct {
 	Tokens []string `json:"tokens"`
 }
 
+// PostCorrection represents the result of the post correction.
 type PostCorrection struct {
 	BookID    int            `json:"bookId"`
 	ProjectID int            `json:"projectId"`
