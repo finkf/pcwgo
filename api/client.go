@@ -409,7 +409,7 @@ func (c Client) GetSuspicious(bookID int) (SuggestionCounts, error) {
 // PostExtendedLexicon sends a request to create the extendedn
 // lexicon for the given book or project.
 func (c Client) PostExtendedLexicon(bookID int) (Job, error) {
-	url := c.url("/postcorrect/el"+bookPath(bookID), Auth, c.Session.Auth)
+	url := c.url("/postcorrect/le"+bookPath(bookID), Auth, c.Session.Auth)
 	var job Job
 	return job, c.post(url, nil, &job)
 }
@@ -417,7 +417,7 @@ func (c Client) PostExtendedLexicon(bookID int) (Job, error) {
 // GetExtendedLexicon returns the extended lexicon for the given book
 // or project.
 func (c Client) GetExtendedLexicon(bookID int) (ExtendedLexicon, error) {
-	url := c.url("/postcorrect/el"+bookPath(bookID), Auth, c.Session.Auth)
+	url := c.url("/postcorrect/le"+bookPath(bookID), Auth, c.Session.Auth)
 	var el ExtendedLexicon
 	return el, c.get(url, &el)
 }
