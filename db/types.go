@@ -1,6 +1,8 @@
 package db
 
 import (
+	"database/sql"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -103,4 +105,79 @@ var suggestionsTable = SuggestionsTableName + "(" +
 func CreateTableSuggestions(db DB) error {
 	_, err := Exec(db, "CREATE TABLE IF NOT EXISTS "+suggestionsTable)
 	return err
+}
+
+// TypeInserter helps handle types with their according type IDs.
+type TypeInserter struct {
+	sel, ins *sql.Stmt
+	ids      map[string]int
+}
+
+// NewTypeInserter constructs a new TypeInserter instance.
+func NewTypeInserter(db sql.DB) (*TypeInserter, error) {
+	sel, err := db.Prepare("SELECT id FROM types WHERE  typ=?")
+	if err != nil {
+		return nil, fmt.Errorf("cannot prepare type select statement: %v", err)
+	}
+	ins, err := db.Prepare("INSERT into types (typ) VALUES (?)")
+	if err != nil {
+		sel.Close() // sel must be closed; ignore error
+		return nil, fmt.Errorf("cannot prepare type insert statment: %v", err)
+	}
+	return &TypeInserter{
+		sel: sel,
+		ins: ins,
+		ids: make(map[string]int),
+	}, nil
+}
+
+// ID returns the id of a given type.  If the type does not yet exist,
+// it is inserted into the database.
+func (t *TypeInserter) ID(typ string) (int, error) {
+	// Cached?
+	if id, ok := t.ids[typ]; ok {
+		return id, nil
+	}
+	rows, err := t.sel.Query(typ)
+	if err != nil {
+		return 0, fmt.Errorf("cannot query type %s: %v", typ, err)
+	}
+	defer rows.Close()
+	// Lookup type in database
+	if rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			return 0, fmt.Errorf("cannot scan id of type %s: %v", typ, err)
+		}
+		t.ids[typ] = id
+		return id, nil
+	}
+	// New type: insert into database
+	res, err := t.ins.Exec(typ)
+	if err != nil {
+		return 0, fmt.Errorf("cannot insert type %s: %v", typ, err)
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("cannot insert type %s: %v", typ, err)
+	}
+	t.ids[typ] = int(id)
+	return int(id), nil
+}
+
+// Close closes the database connections.
+func (t *TypeInserter) Close() (err error) {
+	defer func() {
+		e := t.ins.Close()
+		if err == nil {
+			err = e
+		}
+	}()
+	defer func() {
+		e := t.sel.Close()
+		if err == nil {
+			err = e
+		}
+	}()
+	return nil
 }
