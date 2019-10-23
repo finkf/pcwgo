@@ -136,6 +136,32 @@ func (cs Chars) NextWord() (word, rest Chars) {
 	return cs[:i], cs[i:]
 }
 
+// TrimLeft removes all chars from cs where f returns true.
+func (cs Chars) TrimLeft(f func(Char) bool) Chars {
+	for i := 0; i < len(cs); i++ {
+		if !f(cs[i]) {
+			return cs[i:]
+		}
+	}
+	return nil
+}
+
+// Right removes all chars from cs where f returns true.
+func (cs Chars) TrimRight(f func(Char) bool) Chars {
+	for i := len(cs); i > 0; i-- {
+		if !f(cs[i-1]) {
+			return cs[:i]
+		}
+	}
+	return nil
+}
+
+// Trim trims chars from cs from left and from right.
+func (cs Chars) Trim(f func(Char) bool) Chars {
+	cs = cs.TrimLeft(f)
+	return cs.TrimRight(f)
+}
+
 // Line defines the line of a page in a book.
 type Line struct {
 	ImagePath                string

@@ -36,7 +36,7 @@ const JobsTableName = "jobs"
 const jobsTable = JobsTableName + "(" +
 	"id INTEGER NOT NULL PRIMARY KEY UNIQUE REFERENCES " + BooksTableName + "(BooksID)," +
 	"statusid INTEGER NOT NULL REFERENCES " + StatusTableName + "(id)," +
-	"text VARCHAR(15) NOT NULL," +
+	"text VARCHAR(50) NOT NULL," +
 	"timestamp INT(11) NOT NULL" +
 	");"
 
