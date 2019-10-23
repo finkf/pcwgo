@@ -24,10 +24,10 @@ const booksTable = BooksTableName + "(" +
 	");"
 
 type Book struct {
-	BookID, Year                      int
-	Status                            map[string]bool
-	Author, Title, Description        string
-	URI, ProfilerURL, Directory, Lang string
+	BookID, Year                             int
+	Status                                   map[string]bool
+	Author, Title, Description, HistPatterns string
+	URI, ProfilerURL, Directory, Lang        string
 }
 
 // CreateTableBooks the database table books if it does not already
