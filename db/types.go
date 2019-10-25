@@ -114,7 +114,7 @@ type TypeInserter struct {
 }
 
 // NewTypeInserter constructs a new TypeInserter instance.
-func NewTypeInserter(db sql.DB) (*TypeInserter, error) {
+func NewTypeInserter(db *sql.DB) (*TypeInserter, error) {
 	sel, err := db.Prepare("SELECT id FROM types WHERE  typ=?")
 	if err != nil {
 		return nil, fmt.Errorf("cannot prepare type select statement: %v", err)
