@@ -34,6 +34,7 @@ func Test(t *testing.T) {
 	// log.SetLevel(log.DebugLevel)
 	// var done, failed int
 	sqlite.With("jobs.sqlite", func(dtb *sql.DB) {
+		dtb.SetMaxOpenConns(1)
 		if err := Init(dtb); err != nil {
 			t.Fatalf("cannot initialize: %v", err)
 		}
