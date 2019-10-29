@@ -201,7 +201,7 @@ func InsertLine(db DB, line *Line) error {
 	for i, char := range line.Chars {
 		t.Do(func(db DB) error {
 			_, err := Exec(db, stmt2, line.BookID, line.PageID, line.LineID,
-				char.OCR, char.Cor, char.Cut, char.Conf, i+1)
+				char.OCR, char.Cor, char.Cut, char.Conf, i)
 			return err
 		})
 	}

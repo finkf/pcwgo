@@ -40,6 +40,7 @@ func newChars(id int) []Char {
 			Cor:  rune(cor[i]),
 			OCR:  rune(ocr[i]),
 			Cut:  i + id,
+			Seq:  i,
 			Conf: float64(id) / float64(i+1),
 		}
 	}
