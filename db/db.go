@@ -94,7 +94,7 @@ func (t *Transaction) Done() error {
 		return nil
 	}
 	if t.tx == nil { // error: no valid Tx
-		return t.err
+		return fmt.Errorf("cannot rollback: %v", t.err)
 	}
 	// error: rollback
 	log.Debugf("rollback transaction")
