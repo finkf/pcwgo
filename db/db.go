@@ -40,6 +40,7 @@ type Transaction struct {
 	err error
 }
 
+// NewTransaction creates a new transaction.
 func NewTransaction(tx *sql.Tx, err error) *Transaction {
 	if err != nil {
 		return &Transaction{err: err} // tx = nil, err != nil
@@ -47,6 +48,7 @@ func NewTransaction(tx *sql.Tx, err error) *Transaction {
 	return &Transaction{tx: tx} // tx != nil, err = nil
 }
 
+// Exec executes the given statement.
 func (t *Transaction) Exec(stmt string, args ...interface{}) (sql.Result, error) {
 	if t.err != nil {
 		return nil, fmt.Errorf("cannot exec: transaction error: %v", t.err)
@@ -54,6 +56,7 @@ func (t *Transaction) Exec(stmt string, args ...interface{}) (sql.Result, error)
 	return t.tx.Exec(stmt, args...)
 }
 
+// Query executes the given query statement.
 func (t *Transaction) Query(stmt string, args ...interface{}) (*sql.Rows, error) {
 	if t.err != nil {
 		return nil, fmt.Errorf("cannot query: transaction error: %v", t.err)
@@ -61,6 +64,7 @@ func (t *Transaction) Query(stmt string, args ...interface{}) (*sql.Rows, error)
 	return t.tx.Query(stmt, args...)
 }
 
+// Prepare prease a statement.
 func (t *Transaction) Prepare(query string) (*sql.Stmt, error) {
 	if t.err != nil {
 		return nil, t.err

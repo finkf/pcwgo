@@ -146,7 +146,7 @@ func (cs Chars) TrimLeft(f func(Char) bool) Chars {
 	return nil
 }
 
-// Right removes all chars from cs where f returns true.
+// TrimRight removes all chars from cs where f returns true.
 func (cs Chars) TrimRight(f func(Char) bool) Chars {
 	for i := len(cs); i > 0; i-- {
 		if !f(cs[i-1]) {

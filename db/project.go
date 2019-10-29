@@ -18,6 +18,7 @@ const projectsTable = "" +
 	"Pages INTEGER NOT NULL" +
 	")"
 
+// ProjectPagesTableName defines the name of the project_pages table.
 const ProjectPagesTableName = "project_pages"
 
 const projectPagesTable = ProjectPagesTableName + " (" +
@@ -70,6 +71,8 @@ func CreateAllTables(db DB) error {
 	return nil
 }
 
+// InsertProject inserts a new project into the database.  The project
+// ID of the project is updated accordingly.
 func InsertProject(db DB, p *Project) error {
 	const stmt = "INSERT INTO " + ProjectsTableName +
 		"(Owner,Origin,Pages) VALUES(?,?,?)"
@@ -85,6 +88,7 @@ func InsertProject(db DB, p *Project) error {
 	return nil
 }
 
+// FindProjectByID searches for a project with the given id.
 func FindProjectByID(db DB, id int) (*Project, bool, error) {
 	const stmt = "SELECT p.ID,p.Pages," +
 		"b.BookID,b.Year,b.Author,b.Title,b.Description,b.URI," +
@@ -109,6 +113,8 @@ func FindProjectByID(db DB, id int) (*Project, bool, error) {
 	return &p, true, nil
 }
 
+// FindProjectByOwner searches for all projects owned by the given
+// user ID.
 func FindProjectByOwner(db DB, owner int64) ([]Project, error) {
 	const stmt = "SELECT p.ID,p.Pages," +
 		"b.BookID,b.Year,b.Author,b.Title,b.Description,b.URI," +
@@ -152,6 +158,7 @@ func scanProject(rows *sql.Rows, p *Project) error {
 	return nil
 }
 
+// CreateTableProjectPages creates the project pages table.
 func CreateTableProjectPages(db DB) error {
 	_, err := Exec(db, "CREATE TABLE IF NOT EXISTS "+projectPagesTable)
 	return err
