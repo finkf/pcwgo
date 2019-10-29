@@ -16,9 +16,32 @@ import (
 
 	"github.com/finkf/pcwgo/api"
 	"github.com/finkf/pcwgo/db"
-	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/go-sql-driver/mysql" // to connect with mysql
 	log "github.com/sirupsen/logrus"
 )
+
+type key int
+
+const (
+	authKey key = iota
+	projectKey
+	userKey
+)
+
+// AuthFromCtx returns the registered session from a context.
+func AuthFromCtx(ctx context.Context) *api.Session {
+	return ctx.Value(authKey).(*api.Session)
+}
+
+// ProjectFromCtx returns the registered project from a context.
+func ProjectFromCtx(ctx context.Context) *db.Project {
+	return ctx.Value(projectKey).(*db.Project)
+}
+
+// UserFromCtx returns the registered user from a context.
+func UserFromCtx(ctx context.Context) *db.Project {
+	return ctx.Value(userKey).(*db.Project)
+}
 
 // MaxRetries defines the number of times wait tries to connect to the
 // database.  Zero means unlimited retries.
@@ -121,7 +144,7 @@ func WithProject(f HandlerFunc) HandlerFunc {
 				"cannot find project ID %d", id)
 			return
 		}
-		f(context.WithValue(ctx, "project", p), w, r)
+		f(context.WithValue(ctx, projectKey, p), w, r)
 	}
 }
 
@@ -179,52 +202,38 @@ func WithUser(f HandlerFunc) HandlerFunc {
 				"cannot find user ID: %d", userID)
 			return
 		}
-		f(context.WithValue(ctx, "user", user), w, r)
+		f(context.WithValue(ctx, userKey, user), w, r)
 	}
 }
 
-// WithIDs fills the IDs map with the given (key,id) pairs or returns
-// status not found if the given ids could not be parsed in the given
-// order.  You can prefix a key with `?` to mark it optional (the key
-// is then not inserted intot the ID map if it is not present in the
-// request's URL).
-func WithIDs(f HandlerFunc, keys ...string) HandlerFunc {
-	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		ctx, err := idContext(ctx, r.URL.String(), keys...)
-		if err != nil {
-			ErrorResponse(w, http.StatusNotFound,
-				"cannot parse ids: %v", err)
-			return
-		}
-		f(ctx, w, r)
-	}
-}
-
-// Parse (key,int) pairs from an url `/key/int/...` in the given
-// order of keys and put them into the given context.
-func idContext(ctx context.Context, url string, keys ...string) (context.Context, error) {
-	for _, key := range keys {
+// GetIDs parses the given url for (key/int) pairs and put the
+// resulting ids into the map.  If a map key start with a "?" the
+// given id is optional.  If all keys can be found the function return
+// true or false if a key is missing.  Missing optional keys do not
+// cause this function to return false if the key/id pair is missing.
+func GetIDs(ids map[string]int, url string) bool {
+	for key := range ids {
 		var opt bool
 		if strings.HasPrefix(key, "?") {
 			opt = true
+			delete(ids, key)
 			key = key[1:]
 		}
 		search := "/" + key + "/"
 		pos := strings.Index(url, search)
 		if pos == -1 && !opt {
-			return nil, fmt.Errorf("cannot find required key: %s", key)
+			return false
 		}
 		if pos == -1 && opt {
 			continue
 		}
-		id, rest, err := parseInt(url[pos+len(search):])
+		id, _, err := parseInt(url[pos+len(search):])
 		if err != nil {
-			return nil, err
+			return false
 		}
-		ctx = context.WithValue(ctx, key, id)
-		url = rest
+		ids[key] = id
 	}
-	return ctx, nil
+	return true
 }
 
 // Parse an integer from str to the first `/` or to the end of the
@@ -274,7 +283,7 @@ func WithAuth(f HandlerFunc) HandlerFunc {
 				time.Unix(s.Expires, 0).Format(time.RFC3339))
 			return
 		}
-		f(context.WithValue(ctx, "auth", s), w, r)
+		f(context.WithValue(ctx, authKey, s), w, r)
 	}
 }
 
