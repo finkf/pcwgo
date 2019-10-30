@@ -206,7 +206,7 @@ func WithUserID(f HandlerFunc) HandlerFunc {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		var userID int
 		if n := ParseIDs(r.URL.String(), re, &userID); n != 1 {
-			ErrorResponse(w, http.StatusNotFound,
+			ErrorResponse(w, http.StatusBadRequest,
 				"cannot find user ID: %s", r.URL.String())
 			return
 		}
@@ -222,7 +222,7 @@ func WithProjectID(f HandlerFunc) HandlerFunc {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		var projectID int
 		if n := ParseIDs(r.URL.String(), re, &projectID); n != 1 {
-			ErrorResponse(w, http.StatusNotFound,
+			ErrorResponse(w, http.StatusBadRequest,
 				"cannot find project ID: %s", r.URL.String())
 			return
 		}
@@ -238,7 +238,7 @@ func WithPageID(f HandlerFunc) HandlerFunc {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		var pageID int
 		if n := ParseIDs(r.URL.String(), re, &pageID); n != 1 {
-			ErrorResponse(w, http.StatusNotFound,
+			ErrorResponse(w, http.StatusBadRequest,
 				"cannot find page ID: %s", r.URL.String())
 			return
 		}
@@ -250,11 +250,11 @@ func WithPageID(f HandlerFunc) HandlerFunc {
 // loads it and puts it into the context.  The value can be retrieved
 // with LineIDFromCtx(ctx).
 func WithLineID(f HandlerFunc) HandlerFunc {
-	re := regexp.MustCompile(`/pages/(\d+)`)
+	re := regexp.MustCompile(`/lines/(\d+)`)
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		var lineID int
 		if n := ParseIDs(r.URL.String(), re, &lineID); n != 1 {
-			ErrorResponse(w, http.StatusNotFound,
+			ErrorResponse(w, http.StatusBadRequest,
 				"cannot find line ID: %s", r.URL.String())
 			return
 		}
@@ -266,11 +266,11 @@ func WithLineID(f HandlerFunc) HandlerFunc {
 // loads it and puts it into the context.  The value can be retrieved
 // with JobIDFromCtx(ctx).
 func WithJobID(f HandlerFunc) HandlerFunc {
-	re := regexp.MustCompile(`/pages/(\d+)`)
+	re := regexp.MustCompile(`/jobs/(\d+)`)
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		var jobID int
 		if n := ParseIDs(r.URL.String(), re, &jobID); n != 1 {
-			ErrorResponse(w, http.StatusNotFound,
+			ErrorResponse(w, http.StatusBadRequest,
 				"cannot find job ID: %s", r.URL.String())
 			return
 		}
