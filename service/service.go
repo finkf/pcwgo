@@ -25,7 +25,10 @@ type key int
 const (
 	authKey key = iota
 	projectKey
-	userKey
+	userIDKey
+	projectIDKey
+	pageIDKey
+	lineIDKey
 )
 
 // AuthFromCtx returns the registered session from a context.
@@ -38,9 +41,24 @@ func ProjectFromCtx(ctx context.Context) *db.Project {
 	return ctx.Value(projectKey).(*db.Project)
 }
 
-// UserFromCtx returns the registered user from a context.
-func UserFromCtx(ctx context.Context) *db.Project {
-	return ctx.Value(userKey).(*db.Project)
+// UserIDFromCtx returns the registered user from a context.
+func UserIDFromCtx(ctx context.Context) int {
+	return ctx.Value(userIDKey).(int)
+}
+
+// ProjectIDFromCtx returns the registered user from a context.
+func ProjectIDFromCtx(ctx context.Context) int {
+	return ctx.Value(projectIDKey).(int)
+}
+
+// PageIDFromCtx returns the registered user from a context.
+func PageIDFromCtx(ctx context.Context) int {
+	return ctx.Value(pageIDKey).(int)
+}
+
+// LineIDFromCtx returns the registered user from a context.
+func LineIDFromCtx(ctx context.Context) int {
+	return ctx.Value(lineIDKey).(int)
 }
 
 // MaxRetries defines the number of times wait tries to connect to the
@@ -54,9 +72,10 @@ var Wait = 2 * time.Second
 // internal sql handle
 var pool *sql.DB
 
-// InitDebug sets up the database connection pool using the supplied
-// DSN `user:pass@proto(host/dbname` and sets the log level to debug
-// if debug=true.  It then calls Init(dsn) and returns its result.
+// InitDebug sets up the mysql database connection pool using the
+// supplied DSN `user:pass@proto(host/dbname)` and sets the log level
+// to debug if debug=true.  It then calls Init(dsn) and returns its
+// result.
 func InitDebug(dsn string, debug bool) error {
 	if debug {
 		log.SetLevel(log.DebugLevel)
@@ -64,9 +83,10 @@ func InitDebug(dsn string, debug bool) error {
 	return Init(dsn)
 }
 
-// Init sets up the database connection pool using the supplied DSN
-// `user:pass@proto(host/dbname`.  Init waits for the databsase to be
-// online.  It is not save to call Init from different go routines.
+// Init sets up the mysql database connection pool using the supplied
+// DSN `user:pass@proto(host/dbname)`.  Init waits for the databsase
+// to be online.  It is not save to call Init from different go
+// routines.
 func Init(dsn string) error {
 	// connect to db
 	log.Debugf("connecting to database with %s", dsn)
@@ -106,16 +126,8 @@ func Close() {
 
 // Pool returns the database connection pool that was initialized with
 // Init.
-func Pool() db.DB {
+func Pool() *sql.DB {
 	return pool
-}
-
-// Data defines the payload data for request handlers.
-type Data struct {
-	Session *api.Session   // authentification information
-	Project *db.Project    // requested project
-	Post    interface{}    // post data
-	IDs     map[string]int // ids
 }
 
 // HandlerFunc defines the callback function to handle callbacks with
@@ -123,8 +135,8 @@ type Data struct {
 type HandlerFunc func(context.Context, http.ResponseWriter, *http.Request)
 
 // WithProject loads the project data for the given project id and
-// puts it into the context using "project" as key.  Then it calls the
-// given handler function.
+// puts it into the context.  It can be retrieved with
+// ProjectFromCtx(ctx).
 func WithProject(f HandlerFunc) HandlerFunc {
 	re := regexp.MustCompile(`/books/(\d+)`)
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
@@ -180,29 +192,67 @@ func WithMethods(args ...interface{}) http.HandlerFunc {
 	}
 }
 
-// WithUser extracts the "/users/<numeric id>" part from the url,
-// loads it and puts it into the context with the key "user".
-func WithUser(f HandlerFunc) HandlerFunc {
+// WithUserID extracts the "/users/<numeric id>" part from the url,
+// loads it and puts it into the context.  The value can be retrieved
+// with UserIDFromCtx(ctx).
+func WithUserID(f HandlerFunc) HandlerFunc {
 	re := regexp.MustCompile(`/users/(\d+)`)
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		var userID int
 		if n := ParseIDs(r.URL.String(), re, &userID); n != 1 {
 			ErrorResponse(w, http.StatusNotFound,
-				"cannot find: %s", r.URL.String())
+				"cannot find user ID: %s", r.URL.String())
 			return
 		}
-		user, found, err := db.FindUserByID(pool, int64(userID))
-		if err != nil {
-			ErrorResponse(w, http.StatusInternalServerError,
-				"cannot lookup user: %v", err)
-			return
-		}
-		if !found {
+		f(context.WithValue(ctx, userIDKey, userID), w, r)
+	}
+}
+
+// WithProjectID extracts the "/books/<numeric id>" part from the url,
+// loads it and puts it into the context.  The value can be retrieved
+// with ProjectIDFromCtx(ctx).
+func WithProjectID(f HandlerFunc) HandlerFunc {
+	re := regexp.MustCompile(`/books/(\d+)`)
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		var projectID int
+		if n := ParseIDs(r.URL.String(), re, &projectID); n != 1 {
 			ErrorResponse(w, http.StatusNotFound,
-				"cannot find user ID: %d", userID)
+				"cannot find project ID: %s", r.URL.String())
 			return
 		}
-		f(context.WithValue(ctx, userKey, user), w, r)
+		f(context.WithValue(ctx, projectIDKey, projectID), w, r)
+	}
+}
+
+// WithPageID extracts the "/pages/<numeric id>" part from the url,
+// loads it and puts it into the context.  The value can be retrieved
+// with PageIDFromCtx(ctx).
+func WithPageID(f HandlerFunc) HandlerFunc {
+	re := regexp.MustCompile(`/pages/(\d+)`)
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		var pageID int
+		if n := ParseIDs(r.URL.String(), re, &pageID); n != 1 {
+			ErrorResponse(w, http.StatusNotFound,
+				"cannot find page ID: %s", r.URL.String())
+			return
+		}
+		f(context.WithValue(ctx, pageIDKey, pageID), w, r)
+	}
+}
+
+// WithLineID extracts the "/lines/<numeric id>" part from the url,
+// loads it and puts it into the context.  The value can be retrieved
+// with LineIDFromCtx(ctx).
+func WithLineID(f HandlerFunc) HandlerFunc {
+	re := regexp.MustCompile(`/pages/(\d+)`)
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		var lineID int
+		if n := ParseIDs(r.URL.String(), re, &lineID); n != 1 {
+			ErrorResponse(w, http.StatusNotFound,
+				"cannot find line ID: %s", r.URL.String())
+			return
+		}
+		f(context.WithValue(ctx, lineIDKey, lineID), w, r)
 	}
 }
 
@@ -253,8 +303,8 @@ func parseInt(str string) (int, string, error) {
 // WithAuth checks if the given request contains a valid
 // authentication token.  If not an appropriate error is returned
 // before the given callback function is called.  If the
-// authentification succeeds, the session is put into the context as
-// "auth".
+// authentification succeeds, the session is put into the context and
+// can be retrieved using AuthFromCtx(ctx).
 func WithAuth(f HandlerFunc) HandlerFunc {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		if len(r.URL.Query()["auth"]) != 1 {
@@ -345,17 +395,6 @@ func ParseIDs(url string, re *regexp.Regexp, ids ...*int) int {
 		*ids[i] = id
 	}
 	return i
-}
-
-// IsValidStatus returns true if the given response has any of the given
-// status codes.
-func IsValidStatus(r *http.Response, codes ...int) bool {
-	for _, code := range codes {
-		if r.StatusCode == code {
-			return true
-		}
-	}
-	return false
 }
 
 // LinkOrCopy tries to hard link dest to src.  If the file or link
