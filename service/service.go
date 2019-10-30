@@ -274,7 +274,7 @@ func WithJobID(f HandlerFunc) HandlerFunc {
 				"cannot find job ID: %s", r.URL.String())
 			return
 		}
-		f(context.WithValue(ctx, jobIDKey, lineID), w, r)
+		f(context.WithValue(ctx, jobIDKey, jobID), w, r)
 	}
 }
 
