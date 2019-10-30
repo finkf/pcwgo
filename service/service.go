@@ -29,6 +29,7 @@ const (
 	projectIDKey
 	pageIDKey
 	lineIDKey
+	jobIDKey
 )
 
 // AuthFromCtx returns the registered session from a context.
@@ -41,24 +42,29 @@ func ProjectFromCtx(ctx context.Context) *db.Project {
 	return ctx.Value(projectKey).(*db.Project)
 }
 
-// UserIDFromCtx returns the registered user from a context.
+// UserIDFromCtx returns the registered user ID from a context.
 func UserIDFromCtx(ctx context.Context) int {
 	return ctx.Value(userIDKey).(int)
 }
 
-// ProjectIDFromCtx returns the registered user from a context.
+// ProjectIDFromCtx returns the registered project ID from a context.
 func ProjectIDFromCtx(ctx context.Context) int {
 	return ctx.Value(projectIDKey).(int)
 }
 
-// PageIDFromCtx returns the registered user from a context.
+// PageIDFromCtx returns the registered page ID from a context.
 func PageIDFromCtx(ctx context.Context) int {
 	return ctx.Value(pageIDKey).(int)
 }
 
-// LineIDFromCtx returns the registered user from a context.
+// LineIDFromCtx returns the registered line ID from a context.
 func LineIDFromCtx(ctx context.Context) int {
 	return ctx.Value(lineIDKey).(int)
+}
+
+// JobIDFromCtx returns the registered job ID from a context.
+func JobIDFromCtx(ctx context.Context) int {
+	return ctx.Value(jobIDKey).(int)
 }
 
 // MaxRetries defines the number of times wait tries to connect to the
@@ -253,6 +259,22 @@ func WithLineID(f HandlerFunc) HandlerFunc {
 			return
 		}
 		f(context.WithValue(ctx, lineIDKey, lineID), w, r)
+	}
+}
+
+// WithJobID extracts the "/lines/<numeric id>" part from the url,
+// loads it and puts it into the context.  The value can be retrieved
+// with JobIDFromCtx(ctx).
+func WithJobID(f HandlerFunc) HandlerFunc {
+	re := regexp.MustCompile(`/pages/(\d+)`)
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		var jobID int
+		if n := ParseIDs(r.URL.String(), re, &jobID); n != 1 {
+			ErrorResponse(w, http.StatusNotFound,
+				"cannot find job ID: %s", r.URL.String())
+			return
+		}
+		f(context.WithValue(ctx, jobIDKey, lineID), w, r)
 	}
 }
 
