@@ -429,14 +429,14 @@ func (c Client) GetExtendedLexicon(bookID int) (ExtendedLexicon, error) {
 // correction on the given book with the given extended lexicon
 // tokens.
 func (c Client) PostPostCorrection(bookID int) (Job, error) {
-	url := c.url("/postcorrect/rrdm"+bookPath(bookID), Auth, c.Session.Auth)
+	url := c.url("/postcorrect"+bookPath(bookID), Auth, c.Session.Auth)
 	var job Job
 	return job, c.post(url, nil, &job)
 }
 
 // GetPostCorrection returns the post-correction data for the given book.
 func (c Client) GetPostCorrection(bookID int) (*PostCorrection, error) {
-	url := c.url("/postcorrect/rrdm"+bookPath(bookID), Auth, c.Session.Auth)
+	url := c.url("/postcorrect"+bookPath(bookID), Auth, c.Session.Auth)
 	var pc PostCorrection
 	return &pc, c.get(url, &pc)
 }
