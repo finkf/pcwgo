@@ -441,42 +441,6 @@ func (c Client) GetPostCorrection(bookID int) (*PostCorrection, error) {
 	return &pc, c.get(url, &pc)
 }
 
-// GetOCRModels returns the available ocr models for the given book or
-// project.
-func (c Client) GetOCRModels(bookID int) (Models, error) {
-	url := c.url("/ocr"+bookPath(bookID), Auth, c.Session.Auth)
-	var models Models
-	return models, c.get(url, &models)
-}
-
-// OCRPredict runs the OCR prediction with the given model over the
-// given book or project pages and/or lines.  If the give line and/or
-// page ids are equal to zero the whole page and/or project are
-// predicted.
-func (c Client) OCRPredict(bid, pid, lid int, name string) (Job, error) {
-	model := Model{Name: name}
-	prefix := "/ocr/predict"
-	if lid != 0 {
-		prefix += linePath(bid, pid, lid)
-	} else if pid != 0 {
-		prefix += pagePath(bid, pid)
-	} else {
-		prefix += bookPath(bid)
-	}
-	url := c.url(prefix, Auth, c.Session.Auth)
-	var job Job
-	return job, c.post(url, model, &job)
-}
-
-// OCRTrain trains a new model using the given model as base on the
-// given project.
-func (c Client) OCRTrain(bid int, name string) (Job, error) {
-	model := Model{Name: name}
-	url := c.url("/ocr/train"+bookPath(bid), Auth, c.Session.Auth)
-	var job Job
-	return job, c.post(url, model, &job)
-}
-
 // GetCharMap returns the frequency map of characters for the given
 // book.
 func (c Client) GetCharMap(bid int, filter string) (CharMap, error) {
