@@ -431,7 +431,7 @@ func (c Client) PostPostCorrection(bookID int) (Job, error) {
 	return job, c.post(url, nil, &job)
 }
 
-// GetExtendendLexicon returns the post-correction data for the given book.
+// GetPostCorrection returns the post-correction data for the given book.
 func (c Client) GetPostCorrection(bookID int) (*PostCorrection, error) {
 	url := c.url("/postcorrect/rrdm"+bookPath(bookID), Auth, c.Session.Auth)
 	var pc PostCorrection
