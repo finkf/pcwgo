@@ -300,6 +300,7 @@ func (s Search) params(auth string, qs ...string) []string {
 	ret := []string{Auth, auth}
 	ret = append(ret, "skip", strconv.Itoa(s.Skip))
 	ret = append(ret, "max", strconv.Itoa(s.Max))
+	ret = append(ret, "i", strconv.FormatBool(s.IC))
 	if s.Type != "" {
 		ret = append(ret, "t", string(s.Type))
 	}
