@@ -292,11 +292,21 @@ type AdditionalLexicon struct {
 
 // PostCorrection represents the result of the post correction.
 type PostCorrection struct {
-	BookID    int            `json:"bookId"`
-	ProjectID int            `json:"projectId"`
-	Always    map[string]int `json:"always"`
-	Sometimes map[string]int `json:"sometimes"`
-	Never     map[string]int `json:"never"`
+	BookID    int                             `json:"bookId"`
+	ProjectID int                             `json:"projectId"`
+	Always    map[string][]PostCorrectedToken `json:"always"`
+	Sometimes map[string][]PostCorrectedToken `json:"sometimes"`
+	Never     map[string][]PostCorrectedToken `json:"never"`
+}
+
+// PostCorrectedToken represent unique post corrected tokens.
+type PostCorrectedToken struct {
+	ID         string  `json:"id"`
+	Normalized string  `json:"normalized"`
+	OCR        string  `json:"ocr"`
+	Cor        string  `json:"cor"`
+	Confidence float64 `json:"confidence"`
+	Taken      bool    `json:"taken"`
 }
 
 // Job defines the job struct.
