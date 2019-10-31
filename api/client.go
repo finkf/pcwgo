@@ -280,31 +280,33 @@ const (
 	SearchAC      SearchType = "ac"
 )
 
-// Search is used to configure search requests.
+// Search is used configure and execute searches.
 type Search struct {
-	Qs        []string   // query strings
+	Client    Client     // API client used for the search
 	Skip, Max int        // skip matches and max matches
-	Type      SearchType // type of the search
+	Type      SearchType // type of the search (if empty Type = token)
+	IC        bool       // ignore case (applys only to Type = token)
 }
 
-func (s Search) params() []string {
-	var ret []string
+// Search searches for the given queries.
+func (s Search) Search(bookID int, qs ...string) (*SearchResults, error) {
+	url := s.Client.url(bookPath(bookID)+"/search", s.params(s.Client.Session.Auth, qs...)...)
+	var ret SearchResults
+	err := s.Client.get(url, &ret)
+	return &ret, err
+}
+
+func (s Search) params(auth string, qs ...string) []string {
+	ret := []string{Auth, auth}
 	ret = append(ret, "skip", strconv.Itoa(s.Skip))
 	ret = append(ret, "max", strconv.Itoa(s.Max))
-	ret = append(ret, "t", string(s.Type))
-	for _, q := range s.Qs {
+	if s.Type != "" {
+		ret = append(ret, "t", string(s.Type))
+	}
+	for _, q := range qs {
 		ret = append(ret, "q", q)
 	}
 	return ret
-}
-
-// Search searches for tokens or error patterns.
-func (c Client) Search(bookID int, s Search) (*SearchResults, error) {
-	params := append([]string{Auth, c.Session.Auth}, s.params()...)
-	url := c.url(bookPath(bookID)+"/search", params...)
-	var ret SearchResults
-	err := c.get(url, &ret)
-	return &ret, err
 }
 
 // GetAdaptiveTokens returns the adaptive tokens for the given book.
