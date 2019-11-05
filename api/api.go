@@ -149,40 +149,40 @@ type Page struct {
 
 // Line defines the line of a page in a book.
 type Line struct {
-	ImgFile              string    `json:"imgFile"`
-	Cor                  string    `json:"cor"`
-	OCR                  string    `json:"ocr"`
-	LineID               int       `json:"lineId"`
-	PageID               int       `json:"pageId"`
-	ProjectID            int       `json:"projectId"`
-	BookID               int       `json:"bookId"`
-	Cuts                 []int     `json:"cuts"`
-	Confidences          []float64 `json:"confidences"`
-	AverageConfidence    float64   `json:"averageConfidence"`
-	IsFullyCorrected     bool      `json:"isFullyCorrected"`
-	IsPartiallyCorrected bool      `json:"isPartiallyCorrected"`
-	Box                  Box       `json:"box"`
-	Tokens               []Token   `json:"tokens"`
+	ImgFile                  string    `json:"imgFile"`
+	Cor                      string    `json:"cor"`
+	OCR                      string    `json:"ocr"`
+	LineID                   int       `json:"lineId"`
+	PageID                   int       `json:"pageId"`
+	ProjectID                int       `json:"projectId"`
+	BookID                   int       `json:"bookId"`
+	Cuts                     []int     `json:"cuts"`
+	Confidences              []float64 `json:"confidences"`
+	AverageConfidence        float64   `json:"averageConfidence"`
+	IsAutomaticallyCorrected bool      `json:"isAutomaticallyCorrected"`
+	IsManuallyCorrected      bool      `json:"isManuallyCorrected"`
+	Box                      Box       `json:"box"`
+	Tokens                   []Token   `json:"tokens"`
 }
 
 // Token defines a token on a line.
 type Token struct {
-	Cor                  string    `json:"cor"`
-	OCR                  string    `json:"ocr"`
-	TokenID              int       `json:"tokenId"`
-	LineID               int       `json:"lineId"`
-	PageID               int       `json:"pageId"`
-	ProjectID            int       `json:"projectId"`
-	BookID               int       `json:"bookId"`
-	Offset               int       `json:"offset"`
-	Cuts                 []int     `json:"cuts"`
-	Confidences          []float64 `json:"confidences"`
-	AverageConfidence    float64   `json:"averageConfidence"`
-	IsFullyCorrected     bool      `json:"isFullyCorrected"`
-	IsPartiallyCorrected bool      `json:"isPartiallyCorrected"`
-	IsNormal             bool      `json:"isNormal"`
-	IsMatch              bool      `json:"match"`
-	Box                  Box       `json:"box"`
+	Cor                      string    `json:"cor"`
+	OCR                      string    `json:"ocr"`
+	TokenID                  int       `json:"tokenId"`
+	LineID                   int       `json:"lineId"`
+	PageID                   int       `json:"pageId"`
+	ProjectID                int       `json:"projectId"`
+	BookID                   int       `json:"bookId"`
+	Offset                   int       `json:"offset"`
+	Cuts                     []int     `json:"cuts"`
+	Confidences              []float64 `json:"confidences"`
+	AverageConfidence        float64   `json:"averageConfidence"`
+	IsAutomaticallyCorrected bool      `json:"isAutomaticallyCorrected"`
+	IsManuallyCorrected      bool      `json:"isManuallyCorrected"`
+	IsNormal                 bool      `json:"isNormal"`
+	IsMatch                  bool      `json:"match"`
+	Box                      Box       `json:"box"`
 }
 
 // CharMap represents a freqency list of characters.
