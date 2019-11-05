@@ -200,8 +200,8 @@ func InsertLine(db DB, line *Line) error {
 		"(BookID,PageID,LineID,ImagePath,LLeft,LRight,LTop,LBottom) " +
 		"VALUES(?,?,?,?,?,?,?,?)"
 	const stmt2 = "INSERT INTO " + ContentsTableName +
-		"(BookID,PageID,LineID,OCR,Cor,Cut,Conf,Seq) " +
-		"VALUES(?,?,?,?,?,?,?,?)"
+		"(BookID,PageID,LineID,OCR,Cor,Cut,Conf,Seq,Manually) " +
+		"VALUES(?,?,?,?,?,?,?,?,?)"
 	t := NewTransaction(Begin(db))
 	t.Do(func(db DB) error {
 		_, err := Exec(db, stmt1, line.BookID, line.PageID, line.LineID,
@@ -211,7 +211,7 @@ func InsertLine(db DB, line *Line) error {
 	for i, char := range line.Chars {
 		t.Do(func(db DB) error {
 			_, err := Exec(db, stmt2, line.BookID, line.PageID, line.LineID,
-				char.OCR, char.Cor, char.Cut, char.Conf, i)
+				char.OCR, char.Cor, char.Cut, char.Conf, i, char.Manually)
 			return err
 		})
 	}

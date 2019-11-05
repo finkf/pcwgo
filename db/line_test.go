@@ -37,11 +37,12 @@ func newChars(id int) []Char {
 	chars := make([]Char, len(ocr))
 	for i := range ocr {
 		chars[i] = Char{
-			Cor:  rune(cor[i]),
-			OCR:  rune(ocr[i]),
-			Cut:  i + id,
-			Seq:  i,
-			Conf: float64(id) / float64(i+1),
+			Cor:      rune(cor[i]),
+			OCR:      rune(ocr[i]),
+			Cut:      i + id,
+			Seq:      i,
+			Conf:     float64(id) / float64(i+1),
+			Manually: i%2 == 0,
 		}
 	}
 	return chars
