@@ -31,6 +31,7 @@ const tableContents = ContentsTableName + " (" +
 	"Cor INT NOT NULL," +
 	"Cut INT NOT NULL," +
 	"Conf double NOT NULL," +
+	"Manually boolean NOT NULL DEFAULT(false)," +
 	"PRIMARY KEY (BookID, PageID, LineID, Seq)" +
 	");"
 
@@ -39,11 +40,16 @@ type Char struct {
 	Cor, OCR rune
 	Cut, Seq int
 	Conf     float64
+	Manually bool
+}
+
+func (c *Char) scan(rows *sql.Rows) error {
+	return rows.Scan(&c.OCR, &c.Cor, &c.Cut, &c.Conf, &c.Seq, &c.Manually)
 }
 
 // IsCorrected returns true if the given character is corrected.
 func (c Char) IsCorrected() bool {
-	return c.Cor == 0
+	return c.Cor != 0 && c.Cor != rune(-1)
 }
 
 // Chars defines a slice of characters.
@@ -62,26 +68,26 @@ func (cs Chars) AverageConfidence() float64 {
 	return sum / float64(len(cs))
 }
 
-// IsFullyCorrected returns true if all characters in the slice have
-// been corrected.
-func (cs Chars) IsFullyCorrected() bool {
+// IsAutomaticallyCorrected returns true if all characters in the
+// slice are corrected but are not marked as automatically corrected.
+func (cs Chars) IsAutomaticallyCorrected() bool {
 	for _, c := range cs {
-		if c.Cor == 0 {
+		if !c.IsCorrected() || c.Manually {
 			return false
 		}
 	}
 	return true
 }
 
-// IsPartiallyCorrected returns true if a part of the character slice
-// contains corrections.
-func (cs Chars) IsPartiallyCorrected() bool {
+// IsManuallyCorrected returns true if all parts of the slice are
+// marked as manually corrected.
+func (cs Chars) IsManuallyCorrected() bool {
 	for _, c := range cs {
-		if c.Cor != 0 || c.Cor == -1 {
-			return true
+		if !c.Manually {
+			return false
 		}
 	}
-	return false
+	return true
 }
 
 // Cor returns the corrected string.
@@ -114,7 +120,7 @@ func issep(char Char) bool {
 		c = char.OCR
 	}
 	// a deletion (cor = -1, ocr = char) is not a sep
-	return c != -1 && unicode.IsSpace(c)
+	return c != rune(-1) && unicode.IsSpace(c)
 }
 
 // NextWord returns the next word and the rest in this character
@@ -259,7 +265,7 @@ func FindPageLines(db DB, bookID, pageID int) ([]int, error) {
 func FindLineByID(db DB, bookID, pageID, lineID int) (*Line, bool, error) {
 	const stmt1 = "SELECT ImagePath,LLeft,LRight,LTop,LBottom FROM " +
 		TextLinesTableName + " WHERE BookID=? AND PageID=? AND LineID=?"
-	const stmt2 = "SELECT OCR,Cor,Cut,Conf,Seq FROM " + ContentsTableName +
+	const stmt2 = "SELECT OCR,Cor,Cut,Conf,Seq,Manually FROM " + ContentsTableName +
 		" WHERE BookID=? AND PageID=? AND LineID=? ORDER BY Seq"
 	// query for textlines content
 	rows, err := Query(db, stmt1, bookID, pageID, lineID)
@@ -286,7 +292,7 @@ func FindLineByID(db DB, bookID, pageID, lineID int) (*Line, bool, error) {
 	}
 	for rows.Next() {
 		line.Chars = append(line.Chars, Char{})
-		if err := scanChar(rows, &line.Chars[len(line.Chars)-1]); err != nil {
+		if err := line.Chars[len(line.Chars)-1].scan(rows); err != nil {
 			return nil, false, err
 		}
 	}
