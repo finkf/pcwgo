@@ -178,6 +178,10 @@ type Line struct {
 	Left, Right, Top, Bottom int
 }
 
+func (l *Line) scan(rows *sql.Rows) error {
+	return rows.Scan(&l.ImagePath, &l.Left, &l.Right, &l.Top, &l.Bottom)
+}
+
 // CreateTableLines creates the two tables needed for the storing of
 // text lines in the right order.  The creation will fail, if the
 // books and pages tables do not yet exist.
@@ -281,7 +285,7 @@ func FindLineByID(db DB, bookID, pageID, lineID int) (*Line, bool, error) {
 		PageID: pageID,
 		LineID: lineID,
 	}
-	if err := scanLine(rows, &line); err != nil {
+	if err := line.scan(rows); err != nil {
 		return nil, false, err
 	}
 
@@ -297,16 +301,4 @@ func FindLineByID(db DB, bookID, pageID, lineID int) (*Line, bool, error) {
 		}
 	}
 	return &line, true, nil
-}
-
-func scanChar(rows *sql.Rows, char *Char) error {
-	return rows.Scan(&char.OCR, &char.Cor, &char.Cut, &char.Conf, &char.Seq)
-}
-
-func scanLine(rows *sql.Rows, line *Line) error {
-	err := rows.Scan(&line.ImagePath, &line.Left, &line.Right, &line.Top, &line.Bottom)
-	if err != nil {
-		return err
-	}
-	return nil
 }
