@@ -252,7 +252,7 @@ func (c Client) PutToken(bookID, pageID, lineID, tokenID int, cor CorrectionRequ
 	return &token, err
 }
 
-// PutTokenLen corrects a token of a spcific length.
+// PutTokenLen corrects a token of a specific length.
 func (c Client) PutTokenLen(bookID, pageID, lineID, tokenID, len int, cor CorrectionRequest) (*Token, error) {
 	url := c.url(tokenPath(bookID, pageID, lineID, tokenID),
 		Auth, c.Session.Auth, "len", strconv.Itoa(len))
