@@ -214,13 +214,10 @@ func (c Client) GetLine(bookID, pageID, lineID int) (*Line, error) {
 }
 
 // PutLine corrects is used to correct a line.
-func (c Client) PutLine(bookID, pageID, lineID int, cor string) (*Line, error) {
+func (c Client) PutLine(bookID, pageID, lineID int, cor CorrectionRequest) (*Line, error) {
 	url := c.url(linePath(bookID, pageID, lineID), Auth, c.Session.Auth)
-	post := struct {
-		Correction string `json:"correction"`
-	}{cor}
 	var line Line
-	err := c.put(url, post, &line)
+	err := c.put(url, cor, &line)
 	return &line, err
 }
 
@@ -248,25 +245,19 @@ func (c Client) GetTokenLen(bookID, pageID, lineID, offset, len int) (*Token, er
 }
 
 // PutToken corrects a token.
-func (c Client) PutToken(bookID, pageID, lineID, tokenID int, cor string) (*Token, error) {
+func (c Client) PutToken(bookID, pageID, lineID, tokenID int, cor CorrectionRequest) (*Token, error) {
 	url := c.url(tokenPath(bookID, pageID, lineID, tokenID), Auth, c.Session.Auth)
-	post := struct {
-		Correction string `json:"correction"`
-	}{cor}
 	var token Token
-	err := c.put(url, post, &token)
+	err := c.put(url, cor, &token)
 	return &token, err
 }
 
 // PutTokenLen corrects a token of a spcific length.
-func (c Client) PutTokenLen(bookID, pageID, lineID, tokenID, len int, cor string) (*Token, error) {
+func (c Client) PutTokenLen(bookID, pageID, lineID, tokenID, len int, cor CorrectionRequest) (*Token, error) {
 	url := c.url(tokenPath(bookID, pageID, lineID, tokenID),
 		Auth, c.Session.Auth, "len", strconv.Itoa(len))
-	post := struct {
-		Correction string `json:"correction"`
-	}{cor}
 	var token Token
-	err := c.put(url, post, &token)
+	err := c.put(url, cor, &token)
 	return &token, err
 }
 

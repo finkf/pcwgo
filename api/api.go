@@ -218,6 +218,13 @@ type SearchResults struct {
 	IsErrorPattern bool             `json:"isErrorPattern"`
 }
 
+// CorrectionRequest defines the payload for correction request for
+// lines and/or tokens.
+type CorrectionRequest struct {
+	Correction string `json:"correction"`
+	Manually   bool   `json:"manually"`
+}
+
 // Match defines the matches in the results of searches.
 type Match struct {
 	Lines []Line `json:"lines"`
@@ -290,18 +297,22 @@ type AdditionalLexicon struct {
 	Tokens []string `json:"tokens"`
 }
 
-// PostCorrection represents the result of the post correction.
+// PostCorrection represents the result of the post correction.  It
+// maps tokens with unique id strings (bookID:pageID:lineID:tokenID)
+// to correction decisions of the automatical post correction.
 type PostCorrection struct {
-	BookID    int                             `json:"bookId"`
-	ProjectID int                             `json:"projectId"`
-	Always    map[string][]PostCorrectedToken `json:"always"`
-	Sometimes map[string][]PostCorrectedToken `json:"sometimes"`
-	Never     map[string][]PostCorrectedToken `json:"never"`
+	BookID      int                            `json:"bookId"`
+	ProjectID   int                            `json:"projectId"`
+	Corrections map[string]PostCorrectionToken `json:"corrections"`
 }
 
-// PostCorrectedToken represent unique post corrected tokens.
-type PostCorrectedToken struct {
-	ID         string  `json:"id"`
+// PostCorrectionToken represent unique post corrected tokens.
+type PostCorrectionToken struct {
+	BookID     int     `json:"bookId"`
+	ProjectID  int     `json:"projectId"`
+	PageID     int     `json:"pageId"`
+	LineID     int     `json:"lineId"`
+	TokenID    int     `json:"tokenId"`
 	Normalized string  `json:"normalized"`
 	OCR        string  `json:"ocr"`
 	Cor        string  `json:"cor"`
