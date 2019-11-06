@@ -16,7 +16,7 @@ const (
 	Expires = 10 * time.Hour
 )
 
-// Name defines the name of the sessions table.
+// SessionsTableName defines the name of the sessions table.
 const SessionsTableName = "sessions"
 
 var sessionsTable = "" +
@@ -50,6 +50,7 @@ func InsertSession(db DB, u api.User) (*api.Session, error) {
 	return &api.Session{Auth: auth, User: u, Expires: expires}, nil
 }
 
+// FindSessionByID searches for the given session ID.
 func FindSessionByID(db DB, id string) (*api.Session, bool, error) {
 	s, found, err := selectSession(db, id)
 	if !found || err != nil {
@@ -58,6 +59,7 @@ func FindSessionByID(db DB, id string) (*api.Session, bool, error) {
 	return s, found, err
 }
 
+// DeleteSessionByUserID deletes (all) session of the given user ID.
 func DeleteSessionByUserID(db DB, id int64) error {
 	const stmt = "DELETE FROM " + SessionsTableName + " WHERE UserID=?"
 	_, err := Exec(db, stmt, id)

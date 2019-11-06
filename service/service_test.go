@@ -1,12 +1,12 @@
 package service
 
 import (
-	"context"
+	"reflect"
 	"regexp"
 	"testing"
 )
 
-func TestParseIDMap(t *testing.T) {
+func TestGetIDs(t *testing.T) {
 	tests := []struct {
 		url     string
 		keys    []string
@@ -22,27 +22,24 @@ func TestParseIDMap(t *testing.T) {
 			map[string]int{"jobs": 1, "lines": 3}, false},
 		/* parameters */
 		{"/jobs/1?auth=xyz", []string{"jobs"}, map[string]int{"jobs": 1}, false},
-		/* wrong order */
-		{"/jobs/1/books/2", []string{"books", "jobs"}, nil, true},
 		/* not a valid int */
 		{"/jobs/1/books/3foobar/", []string{"jobs", "books"}, nil, true},
 	}
 	for _, tc := range tests {
 		t.Run(tc.url, func(t *testing.T) {
-			ctx, err := idContext(context.Background(), tc.url, tc.keys...)
-			if err == nil && tc.wantErr {
-				t.Fatalf("expected an error")
+			got := make(map[string]int)
+			for _, key := range tc.keys {
+				got[key] = 0
 			}
-			if err != nil && !tc.wantErr {
-				t.Fatalf("got error: %v", err)
+			ok := GetIDs(got, tc.url)
+			if ok == tc.wantErr {
+				t.Fatalf("unexpected result: %t %t", ok, tc.wantErr)
 			}
 			if tc.wantErr {
 				return
 			}
-			for k, v := range tc.want {
-				if got := ctx.Value(k); got != v {
-					t.Fatalf("expected %v; got %v", v, got)
-				}
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Fatalf("expected %v; got %v", tc.want, got)
 			}
 		})
 	}

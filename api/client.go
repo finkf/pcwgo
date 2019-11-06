@@ -214,13 +214,10 @@ func (c Client) GetLine(bookID, pageID, lineID int) (*Line, error) {
 }
 
 // PutLine corrects is used to correct a line.
-func (c Client) PutLine(bookID, pageID, lineID int, cor string) (*Line, error) {
+func (c Client) PutLine(bookID, pageID, lineID int, cor CorrectionRequest) (*Line, error) {
 	url := c.url(linePath(bookID, pageID, lineID), Auth, c.Session.Auth)
-	post := struct {
-		Correction string `json:"correction"`
-	}{cor}
 	var line Line
-	err := c.put(url, post, &line)
+	err := c.put(url, cor, &line)
 	return &line, err
 }
 
@@ -248,25 +245,19 @@ func (c Client) GetTokenLen(bookID, pageID, lineID, offset, len int) (*Token, er
 }
 
 // PutToken corrects a token.
-func (c Client) PutToken(bookID, pageID, lineID, tokenID int, cor string) (*Token, error) {
+func (c Client) PutToken(bookID, pageID, lineID, tokenID int, cor CorrectionRequest) (*Token, error) {
 	url := c.url(tokenPath(bookID, pageID, lineID, tokenID), Auth, c.Session.Auth)
-	post := struct {
-		Correction string `json:"correction"`
-	}{cor}
 	var token Token
-	err := c.put(url, post, &token)
+	err := c.put(url, cor, &token)
 	return &token, err
 }
 
-// PutTokenLen corrects a token of a spcific length.
-func (c Client) PutTokenLen(bookID, pageID, lineID, tokenID, len int, cor string) (*Token, error) {
+// PutTokenLen corrects a token of a specific length.
+func (c Client) PutTokenLen(bookID, pageID, lineID, tokenID, len int, cor CorrectionRequest) (*Token, error) {
 	url := c.url(tokenPath(bookID, pageID, lineID, tokenID),
 		Auth, c.Session.Auth, "len", strconv.Itoa(len))
-	post := struct {
-		Correction string `json:"correction"`
-	}{cor}
 	var token Token
-	err := c.put(url, post, &token)
+	err := c.put(url, cor, &token)
 	return &token, err
 }
 
@@ -280,31 +271,34 @@ const (
 	SearchAC      SearchType = "ac"
 )
 
-// Search is used to configure search requests.
+// Search is used configure and execute searches.
 type Search struct {
-	Qs        []string   // query strings
+	Client    Client     // API client used for the search
 	Skip, Max int        // skip matches and max matches
-	Type      SearchType // type of the search
+	Type      SearchType // type of the search (if empty Type = token)
+	IC        bool       // ignore case (applys only to Type = token)
 }
 
-func (s Search) params() []string {
-	var ret []string
+// Search searches for the given queries.
+func (s Search) Search(bookID int, qs ...string) (*SearchResults, error) {
+	url := s.Client.url(bookPath(bookID)+"/search", s.params(s.Client.Session.Auth, qs...)...)
+	var ret SearchResults
+	err := s.Client.get(url, &ret)
+	return &ret, err
+}
+
+func (s Search) params(auth string, qs ...string) []string {
+	ret := []string{Auth, auth}
 	ret = append(ret, "skip", strconv.Itoa(s.Skip))
 	ret = append(ret, "max", strconv.Itoa(s.Max))
-	ret = append(ret, "t", string(s.Type))
-	for _, q := range s.Qs {
+	ret = append(ret, "i", strconv.FormatBool(s.IC))
+	if s.Type != "" {
+		ret = append(ret, "t", string(s.Type))
+	}
+	for _, q := range qs {
 		ret = append(ret, "q", q)
 	}
 	return ret
-}
-
-// Search searches for tokens or error patterns.
-func (c Client) Search(bookID int, s Search) (*SearchResults, error) {
-	params := append([]string{Auth, c.Session.Auth}, s.params()...)
-	url := c.url(bookPath(bookID)+"/search", params...)
-	var ret SearchResults
-	err := c.get(url, &ret)
-	return &ret, err
 }
 
 // GetAdaptiveTokens returns the adaptive tokens for the given book.
@@ -426,52 +420,16 @@ func (c Client) GetExtendedLexicon(bookID int) (ExtendedLexicon, error) {
 // correction on the given book with the given extended lexicon
 // tokens.
 func (c Client) PostPostCorrection(bookID int) (Job, error) {
-	url := c.url("/postcorrect/rrdm"+bookPath(bookID), Auth, c.Session.Auth)
+	url := c.url("/postcorrect"+bookPath(bookID), Auth, c.Session.Auth)
 	var job Job
 	return job, c.post(url, nil, &job)
 }
 
-// GetExtendendLexicon returns the post-correction data for the given book.
+// GetPostCorrection returns the post-correction data for the given book.
 func (c Client) GetPostCorrection(bookID int) (*PostCorrection, error) {
-	url := c.url("/postcorrect/rrdm"+bookPath(bookID), Auth, c.Session.Auth)
+	url := c.url("/postcorrect"+bookPath(bookID), Auth, c.Session.Auth)
 	var pc PostCorrection
 	return &pc, c.get(url, &pc)
-}
-
-// GetOCRModels returns the available ocr models for the given book or
-// project.
-func (c Client) GetOCRModels(bookID int) (Models, error) {
-	url := c.url("/ocr"+bookPath(bookID), Auth, c.Session.Auth)
-	var models Models
-	return models, c.get(url, &models)
-}
-
-// OCRPredict runs the OCR prediction with the given model over the
-// given book or project pages and/or lines.  If the give line and/or
-// page ids are equal to zero the whole page and/or project are
-// predicted.
-func (c Client) OCRPredict(bid, pid, lid int, name string) (Job, error) {
-	model := Model{Name: name}
-	prefix := "/ocr/predict"
-	if lid != 0 {
-		prefix += linePath(bid, pid, lid)
-	} else if pid != 0 {
-		prefix += pagePath(bid, pid)
-	} else {
-		prefix += bookPath(bid)
-	}
-	url := c.url(prefix, Auth, c.Session.Auth)
-	var job Job
-	return job, c.post(url, model, &job)
-}
-
-// OCRTrain trains a new model using the given model as base on the
-// given project.
-func (c Client) OCRTrain(bid int, name string) (Job, error) {
-	model := Model{Name: name}
-	url := c.url("/ocr/train"+bookPath(bid), Auth, c.Session.Auth)
-	var job Job
-	return job, c.post(url, model, &job)
 }
 
 // GetCharMap returns the frequency map of characters for the given
@@ -555,6 +513,43 @@ func (c Client) Download(pid int) (io.ReadCloser, error) {
 	return res.Body, nil
 }
 
+// DownloadGlobalPool downloads the global pool and writes it into the
+// given writer.
+func (c Client) DownloadGlobalPool(out io.Writer) error {
+	url := c.url("/pool/global", Auth, c.Session.Auth)
+	if err := c.downloadZIPInto(out, url); err != nil {
+		return fmt.Errorf("cannot download global pool: %v", err)
+	}
+	return nil
+}
+
+// DownloadUserPool downloads the user's pool and writes it into the
+// given writer.
+func (c Client) DownloadUserPool(out io.Writer) error {
+	url := c.url("/pool/user", Auth, c.Session.Auth)
+	if err := c.downloadZIPInto(out, url); err != nil {
+		return fmt.Errorf("cannot download user pool: %v", err)
+	}
+	return nil
+}
+
+func (c Client) downloadZIPInto(out io.Writer, url string) error {
+	log.Debugf("GET %s", url)
+	res, err := c.client.Get(url)
+	if err != nil {
+		return fmt.Errorf("cannot download ZIP: %v", err)
+	}
+	log.Debugf("GET %s: %s", url, res.Status)
+	defer res.Body.Close()
+	if ct := res.Header.Get("Content-Type"); ct != "application/zip" {
+		return fmt.Errorf("cannot download ZIP: invalid Content-Type: %s", ct)
+	}
+	if _, err := io.Copy(out, res.Body); err != nil {
+		return fmt.Errorf("cannot copy ZIP: %v", err)
+	}
+	return nil
+}
+
 func (c Client) url(path string, keyvals ...string) string {
 	var b strings.Builder
 	b.WriteString(c.Host)
@@ -610,8 +605,8 @@ func (c Client) get(url string, out interface{}) error {
 	}
 	defer res.Body.Close()
 	log.Debugf("GET %s: %s", url, res.Status)
-	if !valid(res) {
-		return doError(res)
+	if err := checkStatus(res); err != nil {
+		return err
 	}
 	if out == nil {
 		return nil
@@ -678,8 +673,8 @@ func (c Client) put(url string, data, out interface{}) error {
 		return err
 	}
 	defer res.Body.Close()
-	if !valid(res) {
-		return doError(res)
+	if err := checkStatus(res); err != nil {
+		return err
 	}
 	log.Debugf("reponse from server: %s", res.Status)
 	return json.NewDecoder(res.Body).Decode(out)
@@ -703,8 +698,8 @@ func (c Client) doPost(url, ct string, r io.Reader, out interface{}) error {
 		return err
 	}
 	defer res.Body.Close()
-	if !valid(res) {
-		return doError(res)
+	if err := checkStatus(res); err != nil {
+		return err
 	}
 	log.Debugf("reponse from server: %s", res.Status)
 	// Requests that do not expect any data can set out = nil.
@@ -714,15 +709,35 @@ func (c Client) doPost(url, ct string, r io.Reader, out interface{}) error {
 	return json.NewDecoder(res.Body).Decode(out)
 }
 
-func doError(res *http.Response) error {
+func checkStatus(res *http.Response) error {
+	// no error
+	if res.StatusCode == http.StatusOK {
+		return nil
+	}
+	// try to parse error response
 	var ex Error
 	if err := json.NewDecoder(res.Body).Decode(&ex); err != nil {
-		return fmt.Errorf("bad response: %s", res.Status)
+		return ErrInvalidResponseCode{res.StatusCode}
 	}
-	return fmt.Errorf("bad response: %d %s: %s", ex.Code, ex.Status, ex.Message)
+	// return error message wrapped with invalid response code
+	return fmt.Errorf("error from backend: %s: %w",
+		ex.Message, ErrInvalidResponseCode{res.StatusCode})
 }
 
-func valid(res *http.Response) bool {
-	return res.StatusCode >= http.StatusOK &&
-		res.StatusCode < http.StatusMultipleChoices
+// ErrInvalidResponseCode is the error that is returned for invalid
+// (not 200 (OK)) return codes encountered by the client.
+type ErrInvalidResponseCode struct {
+	Code int
 }
+
+func (err ErrInvalidResponseCode) String() string {
+	return fmt.Sprintf("invalid response code: %d (%s)",
+		err.Code, http.StatusText(err.Code))
+}
+
+func (err ErrInvalidResponseCode) Error() string {
+	return err.String()
+}
+
+// assert is error interface
+var _ error = ErrInvalidResponseCode{500}

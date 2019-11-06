@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// Names of the table and its columns
 const (
 	TypesTableName = "types" // Name of the types table.
 	TypesTableID   = "ID"    // ID field
@@ -72,6 +73,7 @@ func NewType(db DB, str string, ids map[string]int) (int, error) {
 	return int(id), err
 }
 
+// Names of the suggestions table columns.
 const (
 	SuggestionsTableName             = "suggestions"
 	SuggestionsTableID               = "id"

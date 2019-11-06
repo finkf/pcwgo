@@ -149,40 +149,40 @@ type Page struct {
 
 // Line defines the line of a page in a book.
 type Line struct {
-	ImgFile              string    `json:"imgFile"`
-	Cor                  string    `json:"cor"`
-	OCR                  string    `json:"ocr"`
-	LineID               int       `json:"lineId"`
-	PageID               int       `json:"pageId"`
-	ProjectID            int       `json:"projectId"`
-	BookID               int       `json:"bookId"`
-	Cuts                 []int     `json:"cuts"`
-	Confidences          []float64 `json:"confidences"`
-	AverageConfidence    float64   `json:"averageConfidence"`
-	IsFullyCorrected     bool      `json:"isFullyCorrected"`
-	IsPartiallyCorrected bool      `json:"isPartiallyCorrected"`
-	Box                  Box       `json:"box"`
-	Tokens               []Token   `json:"tokens"`
+	ImgFile                  string    `json:"imgFile"`
+	Cor                      string    `json:"cor"`
+	OCR                      string    `json:"ocr"`
+	LineID                   int       `json:"lineId"`
+	PageID                   int       `json:"pageId"`
+	ProjectID                int       `json:"projectId"`
+	BookID                   int       `json:"bookId"`
+	Cuts                     []int     `json:"cuts"`
+	Confidences              []float64 `json:"confidences"`
+	AverageConfidence        float64   `json:"averageConfidence"`
+	IsAutomaticallyCorrected bool      `json:"isAutomaticallyCorrected"`
+	IsManuallyCorrected      bool      `json:"isManuallyCorrected"`
+	Box                      Box       `json:"box"`
+	Tokens                   []Token   `json:"tokens"`
 }
 
 // Token defines a token on a line.
 type Token struct {
-	Cor                  string    `json:"cor"`
-	OCR                  string    `json:"ocr"`
-	TokenID              int       `json:"tokenId"`
-	LineID               int       `json:"lineId"`
-	PageID               int       `json:"pageId"`
-	ProjectID            int       `json:"projectId"`
-	BookID               int       `json:"bookId"`
-	Offset               int       `json:"offset"`
-	Cuts                 []int     `json:"cuts"`
-	Confidences          []float64 `json:"confidences"`
-	AverageConfidence    float64   `json:"averageConfidence"`
-	IsFullyCorrected     bool      `json:"isFullyCorrected"`
-	IsPartiallyCorrected bool      `json:"isPartiallyCorrected"`
-	IsNormal             bool      `json:"isNormal"`
-	IsMatch              bool      `json:"match"`
-	Box                  Box       `json:"box"`
+	Cor                      string    `json:"cor"`
+	OCR                      string    `json:"ocr"`
+	TokenID                  int       `json:"tokenId"`
+	LineID                   int       `json:"lineId"`
+	PageID                   int       `json:"pageId"`
+	ProjectID                int       `json:"projectId"`
+	BookID                   int       `json:"bookId"`
+	Offset                   int       `json:"offset"`
+	Cuts                     []int     `json:"cuts"`
+	Confidences              []float64 `json:"confidences"`
+	AverageConfidence        float64   `json:"averageConfidence"`
+	IsAutomaticallyCorrected bool      `json:"isAutomaticallyCorrected"`
+	IsManuallyCorrected      bool      `json:"isManuallyCorrected"`
+	IsNormal                 bool      `json:"isNormal"`
+	IsMatch                  bool      `json:"match"`
+	Box                      Box       `json:"box"`
 }
 
 // CharMap represents a freqency list of characters.
@@ -216,6 +216,13 @@ type SearchResults struct {
 	Max            int              `json:"max"`
 	Skip           int              `json:"skip"`
 	IsErrorPattern bool             `json:"isErrorPattern"`
+}
+
+// CorrectionRequest defines the payload for correction request for
+// lines and/or tokens.
+type CorrectionRequest struct {
+	Correction string `json:"correction"`
+	Manually   bool   `json:"manually"`
 }
 
 // Match defines the matches in the results of searches.
@@ -290,13 +297,27 @@ type AdditionalLexicon struct {
 	Tokens []string `json:"tokens"`
 }
 
-// PostCorrection represents the result of the post correction.
+// PostCorrection represents the result of the post correction.  It
+// maps tokens with unique id strings (bookID:pageID:lineID:tokenID)
+// to correction decisions of the automatical post correction.
 type PostCorrection struct {
-	BookID    int            `json:"bookId"`
-	ProjectID int            `json:"projectId"`
-	Always    map[string]int `json:"always"`
-	Sometimes map[string]int `json:"sometimes"`
-	Never     map[string]int `json:"never"`
+	BookID      int                            `json:"bookId"`
+	ProjectID   int                            `json:"projectId"`
+	Corrections map[string]PostCorrectionToken `json:"corrections"`
+}
+
+// PostCorrectionToken represent unique post corrected tokens.
+type PostCorrectionToken struct {
+	BookID     int     `json:"bookId"`
+	ProjectID  int     `json:"projectId"`
+	PageID     int     `json:"pageId"`
+	LineID     int     `json:"lineId"`
+	TokenID    int     `json:"tokenId"`
+	Normalized string  `json:"normalized"`
+	OCR        string  `json:"ocr"`
+	Cor        string  `json:"cor"`
+	Confidence float64 `json:"confidence"`
+	Taken      bool    `json:"taken"`
 }
 
 // Job defines the job struct.
