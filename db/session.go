@@ -16,7 +16,7 @@ const (
 	Expires = 10 * time.Hour
 )
 
-// Name defines the name of the sessions table.
+// SessionsTableName defines the name of the sessions table.
 const SessionsTableName = "sessions"
 
 var sessionsTable = "" +
@@ -35,22 +35,23 @@ func CreateTableSessions(db DB) error {
 
 // InsertSession creates a new unique session for the given user in
 // the database and returns the new session.
-func InsertSession(db DB, u api.User) (api.Session, error) {
+func InsertSession(db DB, u api.User) (*api.Session, error) {
 	auth, err := genAuth()
 	if err != nil {
-		return api.Session{}, err
+		return nil, err
 	}
 	expires := time.Now().Add(Expires).Unix()
 	// Insert new session for the user.
 	const stmt2 = "INSERT INTO " + SessionsTableName + "(Auth,UserID,Expires)values(?,?,?)"
 	_, err = Exec(db, stmt2, auth, u.ID, expires)
 	if err != nil {
-		return api.Session{}, err
+		return nil, err
 	}
-	return api.Session{Auth: auth, User: u, Expires: expires}, nil
+	return &api.Session{Auth: auth, User: u, Expires: expires}, nil
 }
 
-func FindSessionByID(db DB, id string) (api.Session, bool, error) {
+// FindSessionByID searches for the given session ID.
+func FindSessionByID(db DB, id string) (*api.Session, bool, error) {
 	s, found, err := selectSession(db, id)
 	if !found || err != nil {
 		return s, found, err
@@ -58,31 +59,32 @@ func FindSessionByID(db DB, id string) (api.Session, bool, error) {
 	return s, found, err
 }
 
+// DeleteSessionByUserID deletes (all) session of the given user ID.
 func DeleteSessionByUserID(db DB, id int64) error {
 	const stmt = "DELETE FROM " + SessionsTableName + " WHERE UserID=?"
 	_, err := Exec(db, stmt, id)
 	return err
 }
 
-func selectSession(db DB, id string) (api.Session, bool, error) {
+func selectSession(db DB, id string) (*api.Session, bool, error) {
 	const stmt = "" +
 		"SELECT s.Auth,s.Expires,u.ID,u.Name,u.Email,u.Institute,u.Admin " +
 		"FROM " + SessionsTableName + " s JOIN " +
 		UsersTableName + " u ON s.UserID=u.ID WHERE s.Auth=?"
 	rows, err := Query(db, stmt, id)
 	if err != nil {
-		return api.Session{}, false, err
+		return nil, false, err
 	}
 	defer rows.Close()
 	if !rows.Next() {
-		return api.Session{}, false, nil
+		return nil, false, nil
 	}
 	var s api.Session
 	if err = rows.Scan(&s.Auth, &s.Expires, &s.User.ID, &s.User.Name,
 		&s.User.Email, &s.User.Institute, &s.User.Admin); err != nil {
-		return api.Session{}, false, err
+		return nil, false, err
 	}
-	return s, true, nil
+	return &s, true, nil
 }
 
 const sessionIDchars = "" +

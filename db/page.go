@@ -1,9 +1,10 @@
 package db
 
+// PagesTableName defines the name of the pages table.
 const PagesTableName = "pages"
 
 const pagesTable = PagesTableName + "(" +
-	"BookID INT REFERENCES Books(BookID)," +
+	"BookID INT REFERENCES " + BooksTableName + "(BookID)," +
 	"PageID INT NOT NULL," +
 	"ImagePath VARCHAR(255)," +
 	"PLeft INT," +
@@ -13,9 +14,10 @@ const pagesTable = PagesTableName + "(" +
 	"PRIMARY KEY (BookID, PageID)" +
 	");"
 
+// Page defines an entry in the page table.
 type Page struct {
 	BookID, PageID           int
-	ImagePath                string
+	ImagePath, OCRPath       string
 	Left, Right, Top, Bottom int
 }
 
@@ -27,6 +29,7 @@ func CreateTablePages(db DB) error {
 	return err
 }
 
+// InsertPage insert a page into the database.
 func InsertPage(db DB, page *Page) error {
 	const stmt = "INSERT INTO " + PagesTableName +
 		"(BookID,PageID,ImagePath,PLeft,PRight,PTop,PBottom)" +

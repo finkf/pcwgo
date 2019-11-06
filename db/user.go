@@ -19,7 +19,7 @@ const (
 	SaltLength = 32
 )
 
-// Name of the table
+// UsersTableName defines the name of the table users.
 const UsersTableName = "users"
 
 var usersTable = "" +
@@ -56,6 +56,7 @@ func InsertUser(db DB, user *api.User) error {
 	return nil
 }
 
+// SetUserPassword updates the password for the given user.
 func SetUserPassword(db DB, user api.User, password string) error {
 	hash, salt, err := genSaltAndHash(password)
 	if err != nil {
@@ -66,6 +67,7 @@ func SetUserPassword(db DB, user api.User, password string) error {
 	return err
 }
 
+// AuthenticateUser authenticates a user.
 func AuthenticateUser(db DB, user api.User, password string) error {
 	const stmt = "SELECT Hash,Salt FROM " + UsersTableName + " WHERE ID=?"
 	rows, err := Query(db, stmt, user.ID)
@@ -94,23 +96,27 @@ func AuthenticateUser(db DB, user api.User, password string) error {
 	return nil
 }
 
+// UpdateUser updates the data of the given user.
 func UpdateUser(db DB, user api.User) error {
 	const stmt = "UPDATE " + UsersTableName + " SET Name=?,Email=?,Institute=? WHERE ID=?"
 	_, err := Exec(db, stmt, user.Name, user.Email, user.Institute, user.ID)
 	return err
 }
 
+// DeleteUserByID deletes a user by ID.
 func DeleteUserByID(db DB, id int64) error {
 	const stmt = "DELETE FROM " + UsersTableName + " WHERE ID=?"
 	_, err := Exec(db, stmt, id)
 	return err
 }
 
+// FindUserByID searches for a user by ID.
 func FindUserByID(db DB, id int64) (api.User, bool, error) {
 	const stmt = "SELECT ID,Name,Email,Institute,Admin FROM " + UsersTableName + " WHERE ID=?"
 	return selectUser(db, stmt, id)
 }
 
+// FindUserByEmail searches for a user by its email.
 func FindUserByEmail(db DB, email string) (api.User, bool, error) {
 	const stmt = "SELECT ID,Name,Email,Institute,Admin FROM " + UsersTableName + " WHERE Email=?"
 	return selectUser(db, stmt, email)

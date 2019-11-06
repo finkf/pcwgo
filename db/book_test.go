@@ -9,9 +9,8 @@ func newTestBook(t *testing.T, db DB, id int) *Book {
 	if err := CreateTableBooks(db); err != nil {
 		t.Fatalf("got error: %v", err)
 	}
-	p := newTestProject(t, db, id, nil)
 	book := &Book{
-		BookID:      int(p.ID),
+		BookID:      id,
 		Author:      fmt.Sprintf("book_author_%d", id),
 		Title:       fmt.Sprintf("book_title_%d", id),
 		Year:        1800 + id,
@@ -20,6 +19,11 @@ func newTestBook(t *testing.T, db DB, id int) *Book {
 		ProfilerURL: fmt.Sprintf("book_profiler_url_%d", id),
 		Directory:   fmt.Sprintf("book_directory_%d", id),
 		Lang:        fmt.Sprintf("book_lang_%d", id),
+		Status: map[string]bool{
+			"profiled":         false,
+			"extended-lexicon": false,
+			"post-corrected":   false,
+		},
 	}
 	err := InsertBook(db, book)
 	if err != nil {

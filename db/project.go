@@ -18,6 +18,7 @@ const projectsTable = "" +
 	"Pages INTEGER NOT NULL" +
 	")"
 
+// ProjectPagesTableName defines the name of the project_pages table.
 const ProjectPagesTableName = "project_pages"
 
 const projectPagesTable = ProjectPagesTableName + " (" +
@@ -25,13 +26,16 @@ const projectPagesTable = ProjectPagesTableName + " (" +
 	"PageID INT NOT NULL REFERENCES Pages(PageID)" +
 	")"
 
+// Project wraps a book with project-related information.
 type Project struct {
-	ID, Origin, Pages int64
-	Owner             api.User
+	Book
+	ProjectID int
+	Pages     int
+	Owner     api.User
 }
 
 func (p Project) String() string {
-	return fmt.Sprintf("%d/%d/%d %s", p.ID, p.Origin, p.Pages, p.Owner)
+	return fmt.Sprintf("%d/%d/%d %s", p.ProjectID, p.BookID, p.Pages, p.Owner)
 }
 
 // CreateTableProjects creates the project table if it does not
@@ -67,9 +71,12 @@ func CreateAllTables(db DB) error {
 	return nil
 }
 
+// InsertProject inserts a new project into the database.  The project
+// ID of the project is updated accordingly.
 func InsertProject(db DB, p *Project) error {
-	const stmt = "INSERT INTO " + ProjectsTableName + "(Owner,Origin,Pages) values(?,?,?)"
-	res, err := Exec(db, stmt, p.Owner.ID, p.Origin, p.Pages)
+	const stmt = "INSERT INTO " + ProjectsTableName +
+		"(Owner,Origin,Pages) VALUES(?,?,?)"
+	res, err := Exec(db, stmt, p.Owner.ID, p.BookID, p.Pages)
 	if err != nil {
 		return err
 	}
@@ -77,14 +84,19 @@ func InsertProject(db DB, p *Project) error {
 	if err != nil {
 		return err
 	}
-	p.ID = id
+	p.ProjectID = int(id)
 	return nil
 }
 
-func FindProjectByID(db DB, id int64) (*Project, bool, error) {
-	const stmt = "" +
-		"SELECT p.ID,p.Origin,p.Pages,u.ID,u.Name,u.Email,u.Institute,u.Admin " +
-		"FROM " + ProjectsTableName + " p JOIN " + UsersTableName + " u ON p.Owner=u.ID " +
+// FindProjectByID searches for a project with the given id.
+func FindProjectByID(db DB, id int) (*Project, bool, error) {
+	const stmt = "SELECT p.ID,p.Pages," +
+		"b.BookID,b.Year,b.Author,b.Title,b.Description,b.URI," +
+		"COALESCE(b.ProfilerURL,''),b.Directory,b.Lang," +
+		"b.profiled,b.extendedlexicon,b.postcorrected," +
+		"u.ID,u.Name,u.Email,u.Institute,u.Admin " +
+		"FROM " + ProjectsTableName + " p JOIN " + UsersTableName +
+		" u ON p.Owner=u.ID JOIN " + BooksTableName + " b ON p.Origin=b.BookID " +
 		"WHERE p.ID=?"
 	rows, err := Query(db, stmt, id)
 	if err != nil {
@@ -101,10 +113,17 @@ func FindProjectByID(db DB, id int64) (*Project, bool, error) {
 	return &p, true, nil
 }
 
+// FindProjectByOwner searches for all projects owned by the given
+// user ID.
 func FindProjectByOwner(db DB, owner int64) ([]Project, error) {
-	const stmt = "" +
-		"SELECT p.ID,p.Origin,p.Pages,u.ID,u.Name,u.Email,u.Institute,u.Admin " +
-		"FROM " + ProjectsTableName + " p JOIN " + UsersTableName + " u on p.Owner=u.ID " +
+	const stmt = "SELECT p.ID,p.Pages," +
+		"b.BookID,b.Year,b.Author,b.Title,b.Description,b.URI," +
+		"COALESCE(b.ProfilerURL,''),b.Directory,b.Lang," +
+		"b.profiled,b.extendedlexicon,b.postcorrected," +
+		"u.ID,u.Name,u.Email,u.Institute,u.Admin " +
+		"FROM " + ProjectsTableName + " p JOIN " + UsersTableName +
+		" u ON p.Owner=u.ID JOIN " + BooksTableName +
+		" b ON p.Origin=b.BookID " +
 		"WHERE p.Owner=?"
 	rows, err := Query(db, stmt, owner)
 	if err != nil {
@@ -122,31 +141,59 @@ func FindProjectByOwner(db DB, owner int64) ([]Project, error) {
 }
 
 func scanProject(rows *sql.Rows, p *Project) error {
-	if err := rows.Scan(&p.ID, &p.Origin, &p.Pages, &p.Owner.ID, &p.Owner.Name,
-		&p.Owner.Email, &p.Owner.Institute, &p.Owner.Admin); err != nil {
+	var pr, e, c bool
+	err := rows.Scan(&p.ProjectID, &p.Pages,
+		&p.BookID, &p.Year, &p.Author, &p.Title, &p.Description, &p.URI,
+		&p.ProfilerURL, &p.Directory, &p.Lang, &pr, &e, &c,
+		&p.Owner.ID, &p.Owner.Name, &p.Owner.Email,
+		&p.Owner.Institute, &p.Owner.Admin)
+	if err != nil {
 		return err
+	}
+	p.Status = map[string]bool{
+		"profiled":         pr,
+		"extended-lexicon": e,
+		"post-corrected":   c,
 	}
 	return nil
 }
 
+// CreateTableProjectPages creates the project pages table.
 func CreateTableProjectPages(db DB) error {
 	_, err := Exec(db, "CREATE TABLE IF NOT EXISTS "+projectPagesTable)
 	return err
 }
 
+// FindBookPages returns the page IDs for the given book.
+func FindBookPages(db DB, bookID int) ([]int, error) {
+	const stmt = "SELECT PageID FROM " + PagesTableName + " WHERE BookID=?"
+	rows, err := Query(db, stmt, bookID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return getIDs(rows)
+}
+
+// FindProjectPages returns the page IDs for the given project.
 func FindProjectPages(db DB, projectID int) ([]int, error) {
 	const stmt = "SELECT PageID FROM " + ProjectPagesTableName + " WHERE ProjectID=?"
 	rows, err := Query(db, stmt, projectID)
 	if err != nil {
 		return nil, err
 	}
-	var pageIDs []int
+	defer rows.Close()
+	return getIDs(rows)
+}
+
+func getIDs(rows *sql.Rows) ([]int, error) {
+	var ids []int
 	for rows.Next() {
-		var pageID int
-		if err := rows.Scan(&pageID); err != nil {
+		var id int
+		if err := rows.Scan(&id); err != nil {
 			return nil, err
 		}
-		pageIDs = append(pageIDs, pageID)
+		ids = append(ids, id)
 	}
-	return pageIDs, nil
+	return ids, nil
 }
