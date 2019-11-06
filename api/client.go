@@ -513,6 +513,41 @@ func (c Client) Download(pid int) (io.ReadCloser, error) {
 	return res.Body, nil
 }
 
+// DownloadGlobalPool downloads the global pool and writes it into the
+// given writer.
+func (c Client) DownloadGlobalPool(out io.Writer) error {
+	url := c.url("pool/global", Auth, c.Session.Auth)
+	if err := c.downloadZIPInto(out, url); err != nil {
+		return fmt.Errorf("cannot download global pool: %v", err)
+	}
+	return nil
+}
+
+// DownloadUserPool downloads the user's pool and writes it into the
+// given writer.
+func (c Client) DownloadUserPool(out io.Writer) error {
+	url := c.url("pool/user", Auth, c.Session.Auth)
+	if err := c.downloadZIPInto(out, url); err != nil {
+		return fmt.Errorf("cannot download user pool: %v", err)
+	}
+	return nil
+}
+
+func (c Client) downloadZIPInto(out io.Writer, url string) error {
+	res, err := c.client.Get(url)
+	if err != nil {
+		return fmt.Errorf("cannot download ZIP: %v", err)
+	}
+	defer res.Body.Close()
+	if res.Header.Get("Content-Type") != "application/zip" {
+		return fmt.Errorf("cannot download ZIP: invalid Content-Type")
+	}
+	if _, err := io.Copy(out, res.Body); err != nil {
+		return fmt.Errorf("cannot copy ZIP: %v", err)
+	}
+	return nil
+}
+
 func (c Client) url(path string, keyvals ...string) string {
 	var b strings.Builder
 	b.WriteString(c.Host)
