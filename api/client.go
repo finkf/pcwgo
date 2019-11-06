@@ -534,13 +534,15 @@ func (c Client) DownloadUserPool(out io.Writer) error {
 }
 
 func (c Client) downloadZIPInto(out io.Writer, url string) error {
+	log.Debugf("GET %s", url)
 	res, err := c.client.Get(url)
 	if err != nil {
 		return fmt.Errorf("cannot download ZIP: %v", err)
 	}
+	log.Debugf("GET %s: %s", url, res.Status)
 	defer res.Body.Close()
-	if res.Header.Get("Content-Type") != "application/zip" {
-		return fmt.Errorf("cannot download ZIP: invalid Content-Type")
+	if ct := res.Header.Get("Content-Type"); ct != "application/zip" {
+		return fmt.Errorf("cannot download ZIP: invalid Content-Type: %s", ct)
 	}
 	if _, err := io.Copy(out, res.Body); err != nil {
 		return fmt.Errorf("cannot copy ZIP: %v", err)
