@@ -516,7 +516,7 @@ func (c Client) Download(pid int) (io.ReadCloser, error) {
 // DownloadGlobalPool downloads the global pool and writes it into the
 // given writer.
 func (c Client) DownloadGlobalPool(out io.Writer) error {
-	url := c.url("pool/global", Auth, c.Session.Auth)
+	url := c.url("/pool/global", Auth, c.Session.Auth)
 	if err := c.downloadZIPInto(out, url); err != nil {
 		return fmt.Errorf("cannot download global pool: %v", err)
 	}
@@ -526,7 +526,7 @@ func (c Client) DownloadGlobalPool(out io.Writer) error {
 // DownloadUserPool downloads the user's pool and writes it into the
 // given writer.
 func (c Client) DownloadUserPool(out io.Writer) error {
-	url := c.url("pool/user", Auth, c.Session.Auth)
+	url := c.url("/pool/user", Auth, c.Session.Auth)
 	if err := c.downloadZIPInto(out, url); err != nil {
 		return fmt.Errorf("cannot download user pool: %v", err)
 	}
