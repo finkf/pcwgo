@@ -41,11 +41,6 @@ type Char struct {
 	Conf     float64
 }
 
-// IsCorrected returns true if the given character is corrected.
-func (c Char) IsCorrected() bool {
-	return c.Cor == 0
-}
-
 // Chars defines a slice of characters.
 type Chars []Char
 
@@ -88,11 +83,16 @@ func (cs Chars) IsPartiallyCorrected() bool {
 func (cs Chars) Cor() string {
 	var b strings.Builder
 	for _, c := range cs {
-		if c.Cor != 0 && c.Cor != -1 {
-			b.WriteRune(c.Cor)
-		} else if c.Cor != -1 && c.OCR != 0 {
-			b.WriteRune(c.OCR)
+		if c.Cor == rune(-1) { // deletion
+			continue
 		}
+		if c.Cor != 0 { // correction
+			b.WriteRune(c.Cor)
+			continue
+		}
+		// c.OCR == 0 cannot happen,
+		// since in this case c.Cor != 0
+		b.WriteRune(c.OCR)
 	}
 	return b.String()
 }
@@ -101,9 +101,10 @@ func (cs Chars) Cor() string {
 func (cs Chars) OCR() string {
 	var b strings.Builder
 	for _, c := range cs {
-		if c.OCR != 0 && c.OCR != rune(-1) {
-			b.WriteRune(c.OCR)
+		if c.OCR == 0 { // insertion
+			continue
 		}
+		b.WriteRune(c.OCR)
 	}
 	return b.String()
 }
