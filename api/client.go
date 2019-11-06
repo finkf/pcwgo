@@ -568,8 +568,8 @@ func (c Client) get(url string, out interface{}) error {
 	}
 	defer res.Body.Close()
 	log.Debugf("GET %s: %s", url, res.Status)
-	if !valid(res) {
-		return doError(res)
+	if err := checkStatus(res); err != nil {
+		return err
 	}
 	if out == nil {
 		return nil
@@ -636,8 +636,8 @@ func (c Client) put(url string, data, out interface{}) error {
 		return err
 	}
 	defer res.Body.Close()
-	if !valid(res) {
-		return doError(res)
+	if err := checkStatus(res); err != nil {
+		return err
 	}
 	log.Debugf("reponse from server: %s", res.Status)
 	return json.NewDecoder(res.Body).Decode(out)
@@ -661,8 +661,8 @@ func (c Client) doPost(url, ct string, r io.Reader, out interface{}) error {
 		return err
 	}
 	defer res.Body.Close()
-	if !valid(res) {
-		return doError(res)
+	if err := checkStatus(res); err != nil {
+		return err
 	}
 	log.Debugf("reponse from server: %s", res.Status)
 	// Requests that do not expect any data can set out = nil.
@@ -672,15 +672,35 @@ func (c Client) doPost(url, ct string, r io.Reader, out interface{}) error {
 	return json.NewDecoder(res.Body).Decode(out)
 }
 
-func doError(res *http.Response) error {
+func checkStatus(res *http.Response) error {
+	// no error
+	if res.StatusCode == http.StatusOK {
+		return nil
+	}
+	// try to parse error response
 	var ex Error
 	if err := json.NewDecoder(res.Body).Decode(&ex); err != nil {
-		return fmt.Errorf("bad response: %s", res.Status)
+		return ErrInvalidResponseCode{res.StatusCode}
 	}
-	return fmt.Errorf("bad response: %d %s: %s", ex.Code, ex.Status, ex.Message)
+	// return error message wrapped with invalid response code
+	return fmt.Errorf("error from backend: %s: %w",
+		ex.Message, ErrInvalidResponseCode{res.StatusCode})
 }
 
-func valid(res *http.Response) bool {
-	return res.StatusCode >= http.StatusOK &&
-		res.StatusCode < http.StatusMultipleChoices
+// ErrInvalidResponseCode is the error that is returned for invalid
+// (not 200 (OK)) return codes encountered by the client.
+type ErrInvalidResponseCode struct {
+	Code int
 }
+
+func (err ErrInvalidResponseCode) String() string {
+	return fmt.Sprintf("invalid response code: %d (%s)",
+		err.Code, http.StatusText(err.Code))
+}
+
+func (err ErrInvalidResponseCode) Error() string {
+	return err.String()
+}
+
+// assert is error interface
+var _ error = ErrInvalidResponseCode{500}
