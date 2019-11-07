@@ -52,10 +52,7 @@ type Session struct {
 
 // Expired returns true if the session has exprired.
 func (s Session) Expired() bool {
-	if s.Expires < time.Now().Unix() {
-		return true
-	}
-	return false
+	return s.Expires < time.Now().Unix()
 }
 
 func (s Session) String() string {
