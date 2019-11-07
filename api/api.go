@@ -218,9 +218,19 @@ type SearchResults struct {
 // CorrectionRequest defines the payload for correction request for
 // lines and/or tokens.
 type CorrectionRequest struct {
-	Correction string `json:"correction"`
-	Manually   bool   `json:"manually"`
+	Correction string  `json:"correction"`
+	Type       CorType `json:"type"`
 }
+
+// CorType defines the type of corrections
+type CorType string
+
+// The three different CorTypes
+const (
+	CorManual    CorType = "manual"
+	CorAutomatic CorType = "automatic"
+	CorOCR       CorType = "ocr"
+)
 
 // Match defines the matches in the results of searches.
 type Match struct {
