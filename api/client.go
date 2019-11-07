@@ -541,6 +541,9 @@ func (c Client) downloadZIPInto(out io.Writer, url string) error {
 	}
 	log.Debugf("GET %s: %s", url, res.Status)
 	defer res.Body.Close()
+	if err := checkStatus(res); err != nil {
+		return err
+	}
 	if ct := res.Header.Get("Content-Type"); ct != "application/zip" {
 		return fmt.Errorf("cannot download ZIP: invalid Content-Type: %s", ct)
 	}
