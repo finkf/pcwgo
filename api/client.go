@@ -553,19 +553,17 @@ func (c Client) downloadZIPInto(out io.Writer, url string) error {
 	return nil
 }
 
+// format an URL. returns host + path [?key=val[&key=val]...]
 func (c Client) url(path string, keyvals ...string) string {
 	var b strings.Builder
 	b.WriteString(c.Host)
 	b.WriteString(path)
-	pre := '?'
-	for i := 0; i+1 < len(keyvals); i += 2 {
-		if keyvals[i+1] == "" { // skip empty values
-			continue
-		}
-		b.WriteRune(pre)
+	pre := byte('?')
+	for i := 1; i < len(keyvals); i += 2 {
+		b.WriteByte(pre)
+		b.WriteString(url.PathEscape(keyvals[i-1]))
+		b.WriteByte('=')
 		b.WriteString(url.PathEscape(keyvals[i]))
-		b.WriteRune('=')
-		b.WriteString(url.PathEscape(keyvals[i+1]))
 		pre = '&'
 	}
 	return b.String()
