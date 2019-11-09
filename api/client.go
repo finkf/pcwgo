@@ -682,7 +682,7 @@ func (c Client) put(url string, data, out interface{}) error {
 }
 
 func (c Client) post(url string, data, out interface{}) error {
-	log.Debugf("POST %s: %v", url, data)
+	log.Debugf("POST %s", url)
 	buf := &bytes.Buffer{}
 	if data != nil {
 		if err := json.NewEncoder(buf).Encode(data); err != nil {
