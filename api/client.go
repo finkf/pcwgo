@@ -221,6 +221,15 @@ func (c Client) PutLine(bookID, pageID, lineID int, cor CorrectionRequest) (*Lin
 	return &line, err
 }
 
+// PutLineX corrects the given line (improved interface).
+func (c Client) PutLineX(line *Line, typ CorType, cor string) error {
+	url := c.url(_linePath(line), Auth, c.Session.Auth, "t", string(typ))
+	data := struct {
+		Cor string `json:"correction"`
+	}{cor}
+	return c.put(url, data, line)
+}
+
 // DeleteLine deletes the given line, page or .
 func (c Client) DeleteLine(bookID, pageID, lineID int) error {
 	url := c.url(linePath(bookID, pageID, lineID), Auth, c.Session.Auth)
@@ -585,6 +594,11 @@ func jobPath(id int) string {
 
 func pagePath(id, pageid int) string {
 	return formatID("/books/%d/pages/%d", id, pageid)
+}
+
+func _linePath(line *Line) string {
+	return formatID("/books/%d/pages/%d/lines/%d",
+		line.ProjectID, line.PageID, line.LineID)
 }
 
 func linePath(id, pageid, lineid int) string {
