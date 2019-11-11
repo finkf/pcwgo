@@ -213,7 +213,7 @@ func (c Client) GetLine(bookID, pageID, lineID int) (*Line, error) {
 	return &line, err
 }
 
-// PutLine corrects is used to correct a line.
+// PutLine corrects the given line.
 func (c Client) PutLine(bookID, pageID, lineID int, cor CorrectionRequest) (*Line, error) {
 	url := c.url(linePath(bookID, pageID, lineID), Auth, c.Session.Auth)
 	var line Line
