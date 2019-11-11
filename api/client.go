@@ -261,6 +261,15 @@ func (c Client) PutToken(bookID, pageID, lineID, tokenID int, cor CorrectionRequ
 	return &token, err
 }
 
+// PutTokenX corrects the given token (improved interface).
+func (c Client) PutTokenX(token *Token, typ CorType, cor string) error {
+	url := c.url(_tokenPath(token), Auth, c.Session.Auth, "t", string(typ))
+	data := struct {
+		Cor string `json:"correction"`
+	}{cor}
+	return c.put(url, data, token)
+}
+
 // PutTokenLen corrects a token of a specific length.
 func (c Client) PutTokenLen(bookID, pageID, lineID, tokenID, len int, cor CorrectionRequest) (*Token, error) {
 	url := c.url(tokenPath(bookID, pageID, lineID, tokenID),
@@ -268,6 +277,15 @@ func (c Client) PutTokenLen(bookID, pageID, lineID, tokenID, len int, cor Correc
 	var token Token
 	err := c.put(url, cor, &token)
 	return &token, err
+}
+
+// PutTokenLenX corrects the given token (improved interface).
+func (c Client) PutTokenLenX(token *Token, len int, typ CorType, cor string) error {
+	url := c.url(_tokenPath(token), Auth, c.Session.Auth, "t", string(typ), "len", strconv.Itoa(len))
+	data := struct {
+		Cor string `json:"correction"`
+	}{cor}
+	return c.put(url, data, token)
 }
 
 // SearchType defines the type of searches
@@ -603,6 +621,11 @@ func _linePath(line *Line) string {
 
 func linePath(id, pageid, lineid int) string {
 	return formatID("/books/%d/pages/%d/lines/%d", id, pageid, lineid)
+}
+
+func _tokenPath(token *Token) string {
+	return formatID("/books/%d/pages/%d/lines/%d/tokens/%d",
+		token.ProjectID, token.PageID, token.LineID, token.TokenID)
 }
 
 func tokenPath(id, pageid, lineid, tokenid int) string {
