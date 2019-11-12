@@ -713,10 +713,10 @@ func (c Client) put(url string, data, out interface{}) error {
 		return err
 	}
 	defer res.Body.Close()
+	log.Debugf("reponse from server: %s", res.Status)
 	if err := checkStatus(res); err != nil {
 		return err
 	}
-	log.Debugf("reponse from server: %s", res.Status)
 	return json.NewDecoder(res.Body).Decode(out)
 }
 
