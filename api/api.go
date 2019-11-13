@@ -230,6 +230,7 @@ const (
 	CorManual    CorType = "manual"
 	CorAutomatic CorType = "automatic"
 	CorOCR       CorType = "ocr"
+	CorReset     CorType = "reset"
 )
 
 // Match defines the matches in the results of searches.
