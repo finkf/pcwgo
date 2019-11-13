@@ -35,6 +35,9 @@ const tableContents = ContentsTableName + " (" +
 	"PRIMARY KEY (BookID, PageID, LineID, Seq)" +
 	");"
 
+// MaxLineLength gives the maximal allowed line length
+const MaxLineLength = 0x10000
+
 // Char defines a character.
 type Char struct {
 	Cor, OCR rune
@@ -47,9 +50,36 @@ func (c *Char) scan(rows *sql.Rows) error {
 	return rows.Scan(&c.OCR, &c.Cor, &c.Cut, &c.Conf, &c.Seq, &c.Manually)
 }
 
+// IsInsertion returns true iff the character represents an insertion.
+func (c Char) IsInsertion() bool {
+	return c.OCR == 0 && c.Cor != rune(-1)
+}
+
+// IsDeletion returns true if the character represents a deletion.
+func (c Char) IsDeletion() bool {
+	return c.Cor == rune(-1)
+}
+
+// IsSubstitution returns true if the character represents a substitution.
+func (c Char) IsSubstitution() bool {
+	return c.Cor != 0 && c.OCR != 0 && c.Cor != c.OCR
+}
+
 // IsCorrected returns true if the given character is corrected.
 func (c Char) IsCorrected() bool {
 	return c.Cor != 0 && c.Cor != rune(-1)
+}
+
+// GetCorrected returns the corrected rune.  If the character
+// represents a deletion, 0 is returned.
+func (c Char) GetCorrected() rune {
+	if c.IsDeletion() {
+		return 0
+	}
+	if c.IsCorrected() {
+		return c.Cor
+	}
+	return c.OCR
 }
 
 // Chars defines a slice of characters.
@@ -121,12 +151,56 @@ func (cs Chars) OCR() string {
 }
 
 func issep(char Char) bool {
-	c := char.Cor
-	if c == 0 {
-		c = char.OCR
+	return unicode.IsSpace(char.GetCorrected())
+}
+
+func (cs Chars) eachChar(f func(int, int)) {
+	ocrid, insid := 0, MaxLineLength
+	for i := range cs {
+		var id int
+		if cs[i].IsInsertion() {
+			id = insid
+			insid++
+		} else {
+			id = ocrid
+			ocrid++
+		}
+		f(i, id)
 	}
-	// a deletion (cor = -1, ocr = char) is not a sep
-	return c != rune(-1) && unicode.IsSpace(c)
+}
+
+// EachWord calls the provided callback function for each word
+// (separated by whitespace) with it according id.
+func (cs Chars) EachWord(f func(Chars, int)) {
+	var begin struct{ i, id int }
+	var state int
+	cs.eachChar(func(i, id int) {
+		switch state {
+		case 0: // start
+			if issep(cs[i]) {
+				state = 1
+				return
+			}
+			begin = struct{ i, id int }{i, id}
+			state = 2
+		case 1: // sep
+			if issep(cs[i]) {
+				return
+			}
+			begin = struct{ i, id int }{i, id}
+			state = 2
+		case 2: // rune
+			if !issep(cs[i]) {
+				return
+			}
+			f(cs[begin.i:i], begin.id)
+			state = 1
+		}
+	})
+	// don't forget the last token
+	if state == 2 {
+		f(cs[begin.i:], begin.id)
+	}
 }
 
 // NextWord returns the next word and the rest in this character
