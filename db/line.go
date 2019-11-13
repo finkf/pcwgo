@@ -44,7 +44,7 @@ type Char struct {
 }
 
 func (c *Char) scan(rows *sql.Rows) error {
-	return rows.Scan(&c.OCR, &c.Cor, &c.Cut, &c.Conf, &c.Seq, &c.Manually)
+	return rows.Scan(&c.OCR, &c.Cor, &c.Cut, &c.Conf, &c.Seq, &c.ID, &c.Manually)
 }
 
 // IsInsertion returns true iff the character represents an insertion.
@@ -282,7 +282,7 @@ func InsertLine(db DB, line *Line) error {
 		"(BookID,PageID,LineID,ImagePath,LLeft,LRight,LTop,LBottom) " +
 		"VALUES(?,?,?,?,?,?,?,?)"
 	const stmt2 = "INSERT INTO " + ContentsTableName +
-		"(BookID,PageID,LineID,OCR,Cor,Cut,Conf,Seq,Manually) " +
+		"(BookID,PageID,LineID,OCR,Cor,Cut,Conf,Seq,ID,Manually) " +
 		"VALUES(?,?,?,?,?,?,?,?,?)"
 	t := NewTransaction(Begin(db))
 	t.Do(func(db DB) error {
@@ -293,7 +293,8 @@ func InsertLine(db DB, line *Line) error {
 	for i, char := range line.Chars {
 		t.Do(func(db DB) error {
 			_, err := Exec(db, stmt2, line.BookID, line.PageID, line.LineID,
-				char.OCR, char.Cor, char.Cut, char.Conf, i, char.Manually)
+				char.OCR, char.Cor, char.Cut, char.Conf, i, char.ID,
+				char.Manually)
 			return err
 		})
 	}
@@ -351,7 +352,8 @@ func FindPageLines(db DB, bookID, pageID int) ([]int, error) {
 func FindLineByID(db DB, bookID, pageID, lineID int) (*Line, bool, error) {
 	const stmt1 = "SELECT ImagePath,LLeft,LRight,LTop,LBottom FROM " +
 		TextLinesTableName + " WHERE BookID=? AND PageID=? AND LineID=?"
-	const stmt2 = "SELECT OCR,Cor,Cut,Conf,Seq,Manually FROM " + ContentsTableName +
+	const stmt2 = "SELECT OCR,Cor,Cut,Conf,Seq,ID,Manually " +
+		"FROM " + ContentsTableName +
 		" WHERE BookID=? AND PageID=? AND LineID=? ORDER BY Seq"
 	// query for textlines content
 	rows, err := Query(db, stmt1, bookID, pageID, lineID)
