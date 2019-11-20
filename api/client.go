@@ -299,23 +299,23 @@ const (
 	SearchRegex   SearchType = "regex"
 )
 
-// Search is used configure and execute searches.
-type Search struct {
-	Client    Client     // API client used for the search
+// Searcher is used configure and execute searches.
+type Searcher struct {
+	Client    *Client    // API client used for the search
 	Skip, Max int        // skip matches and max matches
 	Type      SearchType // type of the search (if empty Type = token)
 	IC        bool       // ignore case (applys only to Type = token or Type = regex)
 }
 
 // Search searches for the given queries.
-func (s Search) Search(bookID int, qs ...string) (*SearchResults, error) {
+func (s Searcher) Search(bookID int, qs ...string) (*SearchResults, error) {
 	url := s.Client.url(bookPath(bookID)+"/search", s.params(s.Client.Session.Auth, qs...)...)
 	var ret SearchResults
 	err := s.Client.get(url, &ret)
 	return &ret, err
 }
 
-func (s Search) params(auth string, qs ...string) []string {
+func (s Searcher) params(auth string, qs ...string) []string {
 	ret := []string{Auth, auth}
 	ret = append(ret, "skip", strconv.Itoa(s.Skip))
 	ret = append(ret, "max", strconv.Itoa(s.Max))
