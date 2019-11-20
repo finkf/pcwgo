@@ -35,19 +35,16 @@ const tableContents = ContentsTableName + " (" +
 	"PRIMARY KEY (BookID, PageID, LineID, Seq)" +
 	");"
 
-// MaxLineLength gives the maximal allowed line length
-const MaxLineLength = 0x10000
-
 // Char defines a character.
 type Char struct {
-	Cor, OCR rune
-	Cut, Seq int
-	Conf     float64
-	Manually bool
+	Cor, OCR     rune
+	Cut, Seq, ID int
+	Conf         float64
+	Manually     bool
 }
 
 func (c *Char) scan(rows *sql.Rows) error {
-	return rows.Scan(&c.OCR, &c.Cor, &c.Cut, &c.Conf, &c.Seq, &c.Manually)
+	return rows.Scan(&c.OCR, &c.Cor, &c.Cut, &c.Conf, &c.Seq, &c.ID, &c.Manually)
 }
 
 // IsInsertion returns true iff the character represents an insertion.
@@ -84,6 +81,26 @@ func (c Char) GetCorrected() rune {
 
 // Chars defines a slice of characters.
 type Chars []Char
+
+// ID returns the (token) id for the slice of characters.  The ID of a
+// slice is the character ID of the slice's first character.  If the
+// slice is empty ID returns -1.
+func (cs Chars) ID() int {
+	if len(cs) == 0 {
+		return -1
+	}
+	return cs[0].ID
+}
+
+// Offset returns the character slice's offset.  The offset of a slice
+// is the sequence number of the slice's first character.  If the
+// slice is empty Offset return -1.
+func (cs Chars) Offset() int {
+	if len(cs) == 0 {
+		return -1
+	}
+	return cs[0].Seq
+}
 
 // AverageConfidence calculates the average confidence of the
 // character slice.
@@ -154,52 +171,37 @@ func issep(char Char) bool {
 	return unicode.IsSpace(char.GetCorrected())
 }
 
-func (cs Chars) eachChar(f func(int, int)) {
-	ocrid, insid := 0, MaxLineLength
-	for i := range cs {
-		var id int
-		if cs[i].IsInsertion() {
-			id = insid
-			insid++
-		} else {
-			id = ocrid
-			ocrid++
-		}
-		f(i, id)
-	}
-}
-
 // EachWord calls the provided callback function for each word
 // (separated by whitespace) with it according id.
-func (cs Chars) EachWord(f func(Chars, int)) {
-	var begin struct{ i, id int }
+func (cs Chars) EachWord(f func(Chars)) {
+	var begin int
 	var state int
-	cs.eachChar(func(i, id int) {
+	for i := range cs {
 		switch state {
 		case 0: // start
 			if issep(cs[i]) {
 				state = 1
-				return
+				break
 			}
-			begin = struct{ i, id int }{i, id}
+			begin = i
 			state = 2
 		case 1: // sep
 			if issep(cs[i]) {
 				return
 			}
-			begin = struct{ i, id int }{i, id}
+			begin = i
 			state = 2
 		case 2: // rune
 			if !issep(cs[i]) {
 				return
 			}
-			f(cs[begin.i:i], begin.id)
+			f(cs[begin:i])
 			state = 1
 		}
-	})
+	}
 	// don't forget the last token
 	if state == 2 {
-		f(cs[begin.i:], begin.id)
+		f(cs[begin:])
 	}
 }
 
@@ -280,7 +282,7 @@ func InsertLine(db DB, line *Line) error {
 		"(BookID,PageID,LineID,ImagePath,LLeft,LRight,LTop,LBottom) " +
 		"VALUES(?,?,?,?,?,?,?,?)"
 	const stmt2 = "INSERT INTO " + ContentsTableName +
-		"(BookID,PageID,LineID,OCR,Cor,Cut,Conf,Seq,Manually) " +
+		"(BookID,PageID,LineID,OCR,Cor,Cut,Conf,Seq,ID,Manually) " +
 		"VALUES(?,?,?,?,?,?,?,?,?)"
 	t := NewTransaction(Begin(db))
 	t.Do(func(db DB) error {
@@ -291,7 +293,8 @@ func InsertLine(db DB, line *Line) error {
 	for i, char := range line.Chars {
 		t.Do(func(db DB) error {
 			_, err := Exec(db, stmt2, line.BookID, line.PageID, line.LineID,
-				char.OCR, char.Cor, char.Cut, char.Conf, i, char.Manually)
+				char.OCR, char.Cor, char.Cut, char.Conf, i, char.ID,
+				char.Manually)
 			return err
 		})
 	}
@@ -349,7 +352,8 @@ func FindPageLines(db DB, bookID, pageID int) ([]int, error) {
 func FindLineByID(db DB, bookID, pageID, lineID int) (*Line, bool, error) {
 	const stmt1 = "SELECT ImagePath,LLeft,LRight,LTop,LBottom FROM " +
 		TextLinesTableName + " WHERE BookID=? AND PageID=? AND LineID=?"
-	const stmt2 = "SELECT OCR,Cor,Cut,Conf,Seq,Manually FROM " + ContentsTableName +
+	const stmt2 = "SELECT OCR,Cor,Cut,Conf,Seq,ID,Manually " +
+		"FROM " + ContentsTableName +
 		" WHERE BookID=? AND PageID=? AND LineID=? ORDER BY Seq"
 	// query for textlines content
 	rows, err := Query(db, stmt1, bookID, pageID, lineID)
