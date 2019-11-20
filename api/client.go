@@ -296,7 +296,7 @@ const (
 	SearchToken   SearchType = "token"
 	SearchPattern SearchType = "pattern"
 	SearchAC      SearchType = "ac"
-	SearchRegex   SearchType = "ac"
+	SearchRegex   SearchType = "regex"
 )
 
 // Search is used configure and execute searches.
