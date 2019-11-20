@@ -296,6 +296,7 @@ const (
 	SearchToken   SearchType = "token"
 	SearchPattern SearchType = "pattern"
 	SearchAC      SearchType = "ac"
+	SearchRegex   SearchType = "ac"
 )
 
 // Search is used configure and execute searches.
@@ -303,7 +304,7 @@ type Search struct {
 	Client    Client     // API client used for the search
 	Skip, Max int        // skip matches and max matches
 	Type      SearchType // type of the search (if empty Type = token)
-	IC        bool       // ignore case (applys only to Type = token)
+	IC        bool       // ignore case (applys only to Type = token or Type = regex)
 }
 
 // Search searches for the given queries.
