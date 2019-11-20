@@ -122,7 +122,7 @@ func (c Client) GetAPIVersion() (Version, error) {
 func (c Client) PostZIP(zip io.Reader) (*Book, error) {
 	var book Book
 	url := c.url("/books", Auth, c.Session.Auth)
-	err := c.doPost(url, "application/zip", zip, &book)
+	err := c.postCT(url, "application/zip", zip, &book)
 	return &book, err
 }
 
@@ -140,7 +140,7 @@ func (c Client) PostBook(zip io.Reader, book Book) (*Book, error) {
 		"year", strconv.Itoa(book.Year),
 	)
 	var newBook Book
-	err := c.doPost(url, "application/zip", zip, &newBook)
+	err := c.postCT(url, "application/zip", zip, &newBook)
 	return &newBook, err
 }
 
@@ -641,17 +641,20 @@ func (c Client) get(url string, out interface{}) error {
 	log.Debugf("GET %s", url)
 	res, err := c.client.Get(url)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot get %s: %v", url, err)
 	}
 	defer res.Body.Close()
 	log.Debugf("GET %s: %s", url, res.Status)
 	if err := checkStatus(res); err != nil {
-		return err
+		// Wrap the error to allow users to handle invalid response codes.
+		return fmt.Errorf("cannot get %s: %w", url, err)
 	}
-	if out == nil {
-		return nil
+	if out != nil {
+		if err := decodeJSONMaybeZipped(res, out); err != nil {
+			return fmt.Errorf("cannot get %s: %v", url, err)
+		}
 	}
-	return decodeJSONMaybeZipped(res, out)
+	return nil
 }
 
 func decodeJSONMaybeZipped(res *http.Response, out interface{}) error {
@@ -660,20 +663,13 @@ func decodeJSONMaybeZipped(res *http.Response, out interface{}) error {
 		log.Debugf("unzipping content")
 		gzip, err := gzip.NewReader(r)
 		if err != nil {
-			return err
+			return fmt.Errorf("cannot read gzipped content: %v", err)
 		}
 		r = gzip
 	}
-	// log.Debugf("decodeJSON")
-	// x, err := ioutil.ReadAll(r)
-	// if err != nil {
-	// 	return err
-	// }
-	// log.Debugf("decodeJSON")
-	// log.Debugf("raw: %s", string(x))
-	err := json.NewDecoder(r).Decode(out)
-	if err != nil {
-		return fmt.Errorf("cannot decode server response: %v", err)
+	// Close on res.Body must be called from the calling function
+	if err := json.NewDecoder(r).Decode(out); err != nil {
+		return fmt.Errorf("cannot json-decode server response: %v", err)
 	}
 	return nil
 }
@@ -682,15 +678,16 @@ func (c Client) delete(url string) error {
 	log.Debugf("DELETE %s", url)
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot delete %s: %v", url, err)
 	}
 	res, err := c.client.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot delete %s: %v", url, err)
 	}
 	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("bad response: %s", res.Status)
+	if err := checkStatus(res); err != nil {
+		// Wrap the error to allow users to handle invalid response codes.
+		return fmt.Errorf("cannot delete %s: %w", url, err)
 	}
 	return nil
 }
@@ -699,23 +696,24 @@ func (c Client) put(url string, data, out interface{}) error {
 	log.Debugf("PUT %s", url)
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(data); err != nil {
-		return err
+		return fmt.Errorf("cannot put %s: cannot json-encode data: %v", url, err)
 	}
 	req, err := http.NewRequest(http.MethodPut, url, &buf)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot put %s: %v", url, err)
 	}
 	req.Header = map[string][]string{
 		"Content-Type": {"application/json"},
 	}
 	res, err := c.client.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot put %s: %v", url, err)
 	}
 	defer res.Body.Close()
 	log.Debugf("reponse from server: %s", res.Status)
 	if err := checkStatus(res); err != nil {
-		return err
+		// Wrap the error to allow users to handle invalid response codes.
+		return fmt.Errorf("cannot put %s: %w", url, err)
 	}
 	return json.NewDecoder(res.Body).Decode(out)
 }
@@ -725,30 +723,35 @@ func (c Client) post(url string, data, out interface{}) error {
 	buf := &bytes.Buffer{}
 	if data != nil {
 		if err := json.NewEncoder(buf).Encode(data); err != nil {
-			return err
+			return fmt.Errorf("cannot post %s: cannot json-encode data: %v", url, err)
 		}
 	}
-	return c.doPost(url, "application/json", buf, out)
+	return c.postCT(url, "application/json", buf, out)
 }
 
-func (c Client) doPost(url, ct string, r io.Reader, out interface{}) error {
-	log.Debugf("POST %s", url)
+func (c Client) postCT(url, ct string, r io.Reader, out interface{}) error {
+	log.Debugf("POST ct=%q: %s", ct, url)
 	res, err := c.client.Post(url, ct, r)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot post %s: %v", url, err)
 	}
 	defer res.Body.Close()
 	if err := checkStatus(res); err != nil {
-		return err
+		// Wrap the error to allow users to handle invalid response codes.
+		return fmt.Errorf("cannot post %s: %w", url, err)
 	}
 	log.Debugf("reponse from server: %s", res.Status)
 	// Requests that do not expect any data can set out = nil.
-	if out == nil {
-		return nil
+	if out != nil {
+		if err := json.NewDecoder(res.Body).Decode(out); err != nil {
+			return fmt.Errorf("cannto post %s: cannot json-decode server response: %v", url, err)
+		}
 	}
-	return json.NewDecoder(res.Body).Decode(out)
+	return nil
 }
 
+// Check the status and return an ErrInvalidResponseCode if the
+// responsecode is different to 200.
 func checkStatus(res *http.Response) error {
 	// no error
 	if res.StatusCode == http.StatusOK {
