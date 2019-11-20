@@ -502,11 +502,11 @@ func (c Client) GetLineImage(line *Line) (image.Image, error) {
 	defer res.Body.Close()
 	if err := checkStatus(res); err != nil {
 		// Wrap the error to allow users to handle invalid response codes.
-		return fmt.Errorf("cannot get line image: %w", url, err)
+		return nil, fmt.Errorf("cannot get line image %s: %w", url, err)
 	}
 	if res.Header.Get("Content-Type") != "image/png" {
-		return nil, fmt.Errorf("cannot get line image: invalid Content-Type: %s",
-			res.Header.Get("Content-Type"))
+		return nil, fmt.Errorf("cannot get line image %s: invalid Content-Type: %s",
+			url, res.Header.Get("Content-Type"))
 	}
 	return png.Decode(res.Body)
 }
