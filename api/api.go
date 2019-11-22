@@ -1,8 +1,10 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
 	"time"
 )
 
@@ -144,6 +146,11 @@ type Page struct {
 	Lines      []Line `json:"lines"`
 }
 
+// ID returns page's ID as string.
+func (p *Page) ID() string {
+	return fmt.Sprintf("%d:%d", p.ProjectID, p.PageID)
+}
+
 // Line defines the line of a page in a book.
 type Line struct {
 	ImgFile                  string    `json:"imgFile"`
@@ -160,6 +167,11 @@ type Line struct {
 	IsManuallyCorrected      bool      `json:"isManuallyCorrected"`
 	Box                      Box       `json:"box"`
 	Tokens                   []Token   `json:"tokens"`
+}
+
+// ID returns line's ID as string.
+func (l *Line) ID() string {
+	return fmt.Sprintf("%d:%d:%d", l.ProjectID, l.PageID, l.LineID)
 }
 
 // Token defines a token on a line.
@@ -180,6 +192,11 @@ type Token struct {
 	IsNormal                 bool      `json:"isNormal"`
 	IsMatch                  bool      `json:"match"`
 	Box                      Box       `json:"box"`
+}
+
+// ID returns tokens's ID as string.
+func (t *Token) ID() string {
+	return fmt.Sprintf("%d:%d:%d:%d", t.ProjectID, t.PageID, t.LineID, t.TokenID)
 }
 
 // CharMap represents a freqency list of characters.
@@ -206,13 +223,54 @@ type Box struct {
 
 // SearchResults defines the results for token searches.
 type SearchResults struct {
-	Matches        map[string]Match `json:"matches"`
-	BookID         int              `json:"bookId"`
-	ProjectID      int              `json:"projectId"`
-	Total          int              `json:"total"`
-	Max            int              `json:"max"`
-	Skip           int              `json:"skip"`
-	IsErrorPattern bool             `json:"isErrorPattern"`
+	Matches   map[string]Match `json:"matches"`
+	BookID    int              `json:"bookId"`
+	ProjectID int              `json:"projectId"`
+	Total     int              `json:"total"`
+	Max       int              `json:"max"`
+	Skip      int              `json:"skip"`
+	Type      SearchType       `json:"type"`
+}
+
+// SearchType defines the type of searches
+type SearchType string
+
+// Search types.
+const (
+	SearchToken   SearchType = "token"
+	SearchPattern SearchType = "pattern"
+	SearchAC      SearchType = "ac"
+	SearchRegex   SearchType = "regex"
+)
+
+// MarshalJSON marshals search types into json.
+func (s SearchType) MarshalJSON() ([]byte, error) {
+	return json.Marshal(string(s))
+}
+
+// UnmarshalJSON unmarshals json into search types.
+func (s *SearchType) UnmarshalJSON(in []byte) error {
+	var str string
+	if err := json.Unmarshal(in, &str); err != nil {
+		return err
+	}
+	switch SearchType(str) {
+	case SearchToken:
+		*s = SearchToken
+	case SearchPattern:
+		*s = SearchPattern
+	case SearchAC:
+		*s = SearchAC
+	case SearchRegex:
+		*s = SearchRegex
+	default:
+		return &json.UnmarshalTypeError{
+			Value:  fmt.Sprintf("string %q", str),
+			Type:   reflect.TypeOf(s),
+			Offset: 0,
+		}
+	}
+	return nil
 }
 
 // CorrectionRequest defines the payload for correction request for

@@ -213,6 +213,12 @@ func (c Client) GetLine(bookID, pageID, lineID int) (*Line, error) {
 	return &line, err
 }
 
+// GetLineX gets the line data for the given line.
+func (c Client) GetLineX(line *Line) error {
+	url := c.url(_linePath(line), Auth, c.Session.Auth)
+	return c.get(url, line)
+}
+
 // PutLine corrects the given line.
 func (c Client) PutLine(bookID, pageID, lineID int, cor CorrectionRequest) (*Line, error) {
 	url := c.url(linePath(bookID, pageID, lineID), Auth, c.Session.Auth)
@@ -287,17 +293,6 @@ func (c Client) PutTokenLenX(token *Token, len int, typ CorType, cor string) err
 	}{cor}
 	return c.put(url, data, token)
 }
-
-// SearchType defines the type of searches
-type SearchType string
-
-// Search types.
-const (
-	SearchToken   SearchType = "token"
-	SearchPattern SearchType = "pattern"
-	SearchAC      SearchType = "ac"
-	SearchRegex   SearchType = "regex"
-)
 
 // Searcher is used configure and execute searches.
 type Searcher struct {
@@ -509,6 +504,28 @@ func (c Client) GetLineImage(line *Line) (image.Image, error) {
 			url, res.Header.Get("Content-Type"))
 	}
 	return png.Decode(res.Body)
+}
+
+// DownloadLinePNG downloads the line image for the given line and
+// copies the content into the given writer.
+func (c Client) DownloadLinePNG(out io.Writer, line *Line) error {
+	url := c.hostRoot() + "/" + line.ImgFile
+	log.Debugf("GET %s", url)
+	res, err := c.client.Get(url)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	if err := checkStatus(res); err != nil {
+		// Wrap the error to allow users to handle invalid response codes.
+		return fmt.Errorf("cannot get line image %s: %w", url, err)
+	}
+	if res.Header.Get("Content-Type") != "image/png" {
+		return fmt.Errorf("cannot get line image %s: invalid Content-Type: %s",
+			url, res.Header.Get("Content-Type"))
+	}
+	_, err = io.Copy(out, res.Body)
+	return err
 }
 
 // Download downloads the zipped book's contents.
