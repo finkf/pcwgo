@@ -127,10 +127,10 @@ func (cs Chars) IsAutomaticallyCorrected() bool {
 }
 
 // IsManuallyCorrected returns true if all parts of the slice are
-// marked as manually corrected.
+// corrected and additionally marked as manually corrected.
 func (cs Chars) IsManuallyCorrected() bool {
 	for _, c := range cs {
-		if !c.Manually {
+		if !c.IsCorrected() || !c.Manually {
 			return false
 		}
 	}
