@@ -64,7 +64,7 @@ func (c Char) IsSubstitution() bool {
 
 // IsCorrected returns true if the given character is corrected.
 func (c Char) IsCorrected() bool {
-	return c.Cor != 0 && c.Cor != rune(-1)
+	return c.Cor != 0
 }
 
 // GetCorrected returns the corrected rune.  If the character
