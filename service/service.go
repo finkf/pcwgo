@@ -94,7 +94,7 @@ func InitDebug(dsn string, _ bool) error {
 // routines.
 func Init(dsn string) error {
 	// connect to db
-	ulog.Write("connecting to database with %s", dsn)
+	ulog.Write("connecting to database with", "dsn", dsn)
 	dtb, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return err
@@ -112,7 +112,7 @@ func wait(retries int, sleep time.Duration) error {
 	for i := 0; retries == 0 || i < retries; i++ {
 		rows, err := db.Query(pool, "SELECT id FROM users")
 		if err != nil {
-			ulog.Write("error connecting to the database: %v", err)
+			ulog.Write("error connecting to the database", "err", err)
 			time.Sleep(sleep)
 			continue
 		}
@@ -335,7 +335,7 @@ func WithAuth(f HandlerFunc) HandlerFunc {
 			return
 		}
 		auth := r.URL.Query()["auth"][0]
-		ulog.Write("authenticating with %s", auth)
+		ulog.Write("authenticating", "auth", auth)
 		s, found, err := db.FindSessionByID(pool, auth)
 		if err != nil {
 			ErrorResponse(w, http.StatusInternalServerError,
@@ -347,8 +347,8 @@ func WithAuth(f HandlerFunc) HandlerFunc {
 				"cannot authenticate: invalid authentification")
 			return
 		}
-		ulog.Write("user %s authenticated: %s (expires: %s)",
-			s.User, s.Auth, time.Unix(s.Expires, 0).Format(time.RFC3339))
+		ulog.Write("authenticated", "user", s.User, "auth", s.Auth,
+			"expires", time.Unix(s.Expires, 0).Format(time.RFC3339))
 		if s.Expired() {
 			ErrorResponse(w, http.StatusUnauthorized,
 				"cannot authenticate: session expired: %s",
@@ -362,9 +362,9 @@ func WithAuth(f HandlerFunc) HandlerFunc {
 // WithLog wraps logging around the handling of the request.
 func WithLog(f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ulog.Write("handling [%s] %s", r.Method, r.URL)
+		ulog.Write("handling", "method", r.Method, "url", r.URL)
 		f(w, r)
-		ulog.Write("handled [%s] %s", r.Method, r.URL)
+		ulog.Write("handled", "method", r.Method, "url", r.URL)
 	}
 }
 
@@ -372,8 +372,8 @@ func WithLog(f http.HandlerFunc) http.HandlerFunc {
 // response header and sends a json-formatted response object.
 func ErrorResponse(w http.ResponseWriter, s int, f string, args ...interface{}) {
 	message := fmt.Sprintf(f, args...)
-	ulog.Write("error: %s", message)
 	status := http.StatusText(s)
+	ulog.Write("error response", "err", message, "status", status, "code", s)
 	w.Header().Set("Content-Type", "application/json") // set Content-Type before call to WriteHeader
 	w.WriteHeader(s)
 	JSONResponse(w, struct {
@@ -388,7 +388,7 @@ func ErrorResponse(w http.ResponseWriter, s int, f string, args ...interface{}) 
 func JSONResponse(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(data); err != nil {
-		ulog.Write("cannot write json response: %v", err)
+		ulog.Write("cannot write json response", "err", err)
 	}
 }
 
@@ -400,7 +400,7 @@ func GZIPJSONResponse(w http.ResponseWriter, data interface{}) {
 	gz := gzip.NewWriter(w)
 	defer gz.Close()
 	if err := json.NewEncoder(gz).Encode(data); err != nil {
-		ulog.Write("cannot write gzipped json response: %v", err)
+		ulog.Write("cannot write gzipped json response", "err", err)
 	}
 }
 
