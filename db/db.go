@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/UNO-SOFT/ulog"
 )
 
 // DB defines a simple interface for database handling.
@@ -17,20 +17,20 @@ type DB interface {
 
 // Exec calls Exec on the given DB handle. The given args are logged.
 func Exec(db DB, stmt string, args ...interface{}) (sql.Result, error) {
-	log.Debugf("exec: %s %v", stmt, args)
+	ulog.Write("exec", "stmt", stmt, "args", args)
 	return db.Exec(stmt, args...)
 }
 
 // Query calls Query on the given DB handle. The given args are logged.
 func Query(db DB, stmt string, args ...interface{}) (*sql.Rows, error) {
-	log.Debugf("query: %s %v", stmt, args)
+	ulog.Write("query", "stmt", stmt, "args", args)
 	return db.Query(stmt, args...)
 }
 
 // Begin calls Begin on the given DB handle and logs the beginning of
 // a transaction.
 func Begin(db DB) (*sql.Tx, error) {
-	log.Debugf("begin transaction")
+	ulog.Write("begin transaction")
 	return db.Begin()
 }
 
@@ -91,7 +91,7 @@ func (t *Transaction) Do(f func(DB) error) {
 // rolled back.
 func (t *Transaction) Done() error {
 	if t.err == nil { // no error: commit
-		log.Debugf("commit transaction")
+		ulog.Write("commit transaction")
 		if err := t.tx.Commit(); err != nil {
 			return fmt.Errorf("cannot commit transaction: %v", err)
 		}
@@ -101,7 +101,7 @@ func (t *Transaction) Done() error {
 		return fmt.Errorf("cannot rollback: %v", t.err)
 	}
 	// error: rollback
-	log.Debugf("rollback transaction")
+	ulog.Write("rollback transaction")
 	if err := t.tx.Rollback(); err != nil {
 		return fmt.Errorf("cannot rollback after error: %v: %v", t.err, err)
 	}

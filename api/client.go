@@ -15,8 +15,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/UNO-SOFT/ulog"
 	"github.com/finkf/gofiler"
-	log "github.com/sirupsen/logrus"
 )
 
 // Client implements the api calls for the pcw backend.
@@ -59,7 +59,7 @@ func Login(host, email, password string, skipVerify bool) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Debugf("session: %s", s)
+	ulog.Write("logged in", "session", s)
 	client.Session = s
 	return client, nil
 }
@@ -467,7 +467,7 @@ func (c Client) GetCharMap(bid int, filter string) (CharMap, error) {
 // response content into the given writer.
 func (c Client) Raw(path string, out io.Writer) error {
 	url := c.url(path, Auth, c.Session.Auth)
-	log.Debugf("GET %s", url)
+	ulog.Write("raw", "method", "GET", "url", url)
 	res, err := c.client.Get(url)
 	if err != nil {
 		return err
@@ -489,7 +489,7 @@ func (c Client) hostRoot() string {
 // point only PNGs are accepted.
 func (c Client) GetLineImage(line *Line) (image.Image, error) {
 	url := c.hostRoot() + "/" + line.ImgFile
-	log.Debugf("GET %s", url)
+	ulog.Write("get line image", "method", "GET", "url", url)
 	res, err := c.client.Get(url)
 	if err != nil {
 		return nil, err
@@ -510,7 +510,7 @@ func (c Client) GetLineImage(line *Line) (image.Image, error) {
 // copies the content into the given writer.
 func (c Client) DownloadLinePNG(out io.Writer, line *Line) error {
 	url := c.hostRoot() + "/" + line.ImgFile
-	log.Debugf("GET %s", url)
+	ulog.Write("download line png", "method", "GET", "url", url)
 	res, err := c.client.Get(url)
 	if err != nil {
 		return err
@@ -540,12 +540,12 @@ func (c Client) Download(pid int) (io.ReadCloser, error) {
 	}
 	// download archive
 	xurl = c.hostRoot() + "/" + archive.Archive
-	log.Debugf("GET %s", xurl)
+	ulog.Write("download", "method", "GET", "url", xurl)
 	res, err := c.client.Get(xurl)
 	if err != nil {
 		return nil, fmt.Errorf("cannot download: %v", err)
 	}
-	log.Debugf("GET %s: %s", xurl, res.Status)
+	ulog.Write("download", "method", "GET", "url", xurl)
 	// do *not* defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		res.Body.Close()
@@ -580,12 +580,12 @@ func (c Client) DownloadUserPool(out io.Writer) error {
 }
 
 func (c Client) downloadZIPInto(out io.Writer, url string) error {
-	log.Debugf("GET %s", url)
+	ulog.Write("download zip into", "method", "GET", "url", url)
 	res, err := c.client.Get(url)
 	if err != nil {
 		return fmt.Errorf("cannot download ZIP: %v", err)
 	}
-	log.Debugf("GET %s: %s", url, res.Status)
+	ulog.Write("download zip into", "method", "GET", "url", url, "status", res.Status)
 	defer res.Body.Close()
 	if err := checkStatus(res); err != nil {
 		// Wrap the error to allow users to handle invalid response codes.
@@ -656,13 +656,13 @@ func formatID(url string, args ...interface{}) string {
 }
 
 func (c Client) get(url string, out interface{}) error {
-	log.Debugf("GET %s", url)
+	ulog.Write("get", "method", "GET", "url", url)
 	res, err := c.client.Get(url)
 	if err != nil {
 		return fmt.Errorf("cannot get %s: %v", url, err)
 	}
 	defer res.Body.Close()
-	log.Debugf("GET %s: %s", url, res.Status)
+	ulog.Write("get", "method", "GET", "url", url, "status", res.Status)
 	if err := checkStatus(res); err != nil {
 		// Wrap the error to allow users to handle invalid response codes.
 		return fmt.Errorf("cannot get %s: %w", url, err)
@@ -678,7 +678,7 @@ func (c Client) get(url string, out interface{}) error {
 func decodeJSONMaybeZipped(res *http.Response, out interface{}) error {
 	var r io.Reader = res.Body
 	if res.Header.Get("Content-Encoding") == "gzip" {
-		log.Debugf("unzipping content")
+		ulog.Write("unzipping content")
 		gzip, err := gzip.NewReader(r)
 		if err != nil {
 			return fmt.Errorf("cannot read gzipped content: %v", err)
@@ -693,7 +693,7 @@ func decodeJSONMaybeZipped(res *http.Response, out interface{}) error {
 }
 
 func (c Client) delete(url string) error {
-	log.Debugf("DELETE %s", url)
+	ulog.Write("delete", "method", "DELETE", "url", url)
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
 		return fmt.Errorf("cannot delete %s: %v", url, err)
@@ -711,7 +711,7 @@ func (c Client) delete(url string) error {
 }
 
 func (c Client) put(url string, data, out interface{}) error {
-	log.Debugf("PUT %s", url)
+	ulog.Write("put", "method", "PUT", "url", url)
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(data); err != nil {
 		return fmt.Errorf("cannot put %s: cannot json-encode data: %v", url, err)
@@ -728,7 +728,7 @@ func (c Client) put(url string, data, out interface{}) error {
 		return fmt.Errorf("cannot put %s: %v", url, err)
 	}
 	defer res.Body.Close()
-	log.Debugf("reponse from server: %s", res.Status)
+	ulog.Write("reponse from server", "status", res.Status)
 	if err := checkStatus(res); err != nil {
 		// Wrap the error to allow users to handle invalid response codes.
 		return fmt.Errorf("cannot put %s: %w", url, err)
@@ -737,7 +737,7 @@ func (c Client) put(url string, data, out interface{}) error {
 }
 
 func (c Client) post(url string, data, out interface{}) error {
-	log.Debugf("POST %s", url)
+	ulog.Write("post", "method", "POST", "url", url)
 	buf := &bytes.Buffer{}
 	if data != nil {
 		if err := json.NewEncoder(buf).Encode(data); err != nil {
@@ -748,7 +748,7 @@ func (c Client) post(url string, data, out interface{}) error {
 }
 
 func (c Client) postCT(url, ct string, r io.Reader, out interface{}) error {
-	log.Debugf("POST ct=%q: %s", ct, url)
+	ulog.Write("post ct", "method", "POST", "url", url, "ct", ct)
 	res, err := c.client.Post(url, ct, r)
 	if err != nil {
 		return fmt.Errorf("cannot post %s: %v", url, err)
@@ -758,7 +758,7 @@ func (c Client) postCT(url, ct string, r io.Reader, out interface{}) error {
 		// Wrap the error to allow users to handle invalid response codes.
 		return fmt.Errorf("cannot post %s: %w", url, err)
 	}
-	log.Debugf("reponse from server: %s", res.Status)
+	ulog.Write("reponse from server", "status", res.Status)
 	// Requests that do not expect any data can set out = nil.
 	if out != nil {
 		if err := json.NewDecoder(res.Body).Decode(out); err != nil {

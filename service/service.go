@@ -14,10 +14,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/UNO-SOFT/ulog"
 	"github.com/finkf/pcwgo/api"
 	"github.com/finkf/pcwgo/db"
 	_ "github.com/go-sql-driver/mysql" // to connect with mysql
-	log "github.com/sirupsen/logrus"
 )
 
 type key int
@@ -82,10 +82,9 @@ var pool *sql.DB
 // supplied DSN `user:pass@proto(host/dbname)` and sets the log level
 // to debug if debug=true.  It then calls Init(dsn) and returns its
 // result.
-func InitDebug(dsn string, debug bool) error {
-	if debug {
-		log.SetLevel(log.DebugLevel)
-	}
+//
+// Note: Does not set the log level
+func InitDebug(dsn string, _ bool) error {
 	return Init(dsn)
 }
 
@@ -95,7 +94,7 @@ func InitDebug(dsn string, debug bool) error {
 // routines.
 func Init(dsn string) error {
 	// connect to db
-	log.Debugf("connecting to database with %s", dsn)
+	ulog.Write("connecting to database with %s", dsn)
 	dtb, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return err
@@ -113,13 +112,13 @@ func wait(retries int, sleep time.Duration) error {
 	for i := 0; retries == 0 || i < retries; i++ {
 		rows, err := db.Query(pool, "SELECT id FROM users")
 		if err != nil {
-			log.Debugf("error connecting to the database: %v", err)
+			ulog.Write("error connecting to the database: %v", err)
 			time.Sleep(sleep)
 			continue
 		}
 		// successfully connected to the database
 		rows.Close()
-		log.Debugf("connected sucessfully to database")
+		ulog.Write("connected sucessfully to database")
 		return nil
 	}
 	return fmt.Errorf("failed to connect to database after %d attempts", retries)
@@ -184,7 +183,8 @@ func WithMethods(args ...interface{}) http.HandlerFunc {
 		case func(context.Context, http.ResponseWriter, *http.Request):
 			methods[method] = HandlerFunc(t)
 		default:
-			log.Fatalf("invalid type in WithMethods: %T", t)
+			ulog.Write("invalid type in WithMethods", "type", fmt.Sprintf("%T", t))
+			panic("invalid type")
 		}
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -335,7 +335,7 @@ func WithAuth(f HandlerFunc) HandlerFunc {
 			return
 		}
 		auth := r.URL.Query()["auth"][0]
-		log.Debugf("authenticating with %s", auth)
+		ulog.Write("authenticating with %s", auth)
 		s, found, err := db.FindSessionByID(pool, auth)
 		if err != nil {
 			ErrorResponse(w, http.StatusInternalServerError,
@@ -347,7 +347,7 @@ func WithAuth(f HandlerFunc) HandlerFunc {
 				"cannot authenticate: invalid authentification")
 			return
 		}
-		log.Infof("user %s authenticated: %s (expires: %s)",
+		ulog.Write("user %s authenticated: %s (expires: %s)",
 			s.User, s.Auth, time.Unix(s.Expires, 0).Format(time.RFC3339))
 		if s.Expired() {
 			ErrorResponse(w, http.StatusUnauthorized,
@@ -362,9 +362,9 @@ func WithAuth(f HandlerFunc) HandlerFunc {
 // WithLog wraps logging around the handling of the request.
 func WithLog(f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Infof("handling [%s] %s", r.Method, r.URL)
+		ulog.Write("handling [%s] %s", r.Method, r.URL)
 		f(w, r)
-		log.Infof("handled [%s] %s", r.Method, r.URL)
+		ulog.Write("handled [%s] %s", r.Method, r.URL)
 	}
 }
 
@@ -372,7 +372,7 @@ func WithLog(f http.HandlerFunc) http.HandlerFunc {
 // response header and sends a json-formatted response object.
 func ErrorResponse(w http.ResponseWriter, s int, f string, args ...interface{}) {
 	message := fmt.Sprintf(f, args...)
-	log.Infof("error: %s", message)
+	ulog.Write("error: %s", message)
 	status := http.StatusText(s)
 	w.Header().Set("Content-Type", "application/json") // set Content-Type before call to WriteHeader
 	w.WriteHeader(s)
@@ -388,7 +388,7 @@ func ErrorResponse(w http.ResponseWriter, s int, f string, args ...interface{}) 
 func JSONResponse(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(data); err != nil {
-		log.Infof("cannot write json response: %v", err)
+		ulog.Write("cannot write json response: %v", err)
 	}
 }
 
@@ -400,7 +400,7 @@ func GZIPJSONResponse(w http.ResponseWriter, data interface{}) {
 	gz := gzip.NewWriter(w)
 	defer gz.Close()
 	if err := json.NewEncoder(gz).Encode(data); err != nil {
-		log.Infof("cannot write gzipped json response: %v", err)
+		ulog.Write("cannot write gzipped json response: %v", err)
 	}
 }
 

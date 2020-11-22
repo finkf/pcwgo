@@ -1,16 +1,15 @@
-package jobs // import "github.com/finkf/pcwgo/jobs"
+package jobs // import "github.com/cisocrgroup/services/pcwgo/jobs"
 
 import (
 	"bufio"
 	"context"
 	"fmt"
 	"os/exec"
-	"strings"
 	"sync"
 
+	"github.com/UNO-SOFT/ulog"
 	"github.com/finkf/pcwgo/api"
 	"github.com/finkf/pcwgo/db"
-	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -57,7 +56,7 @@ func Close() error {
 		js.queue <- s{stop: true}
 		// wait until all running jobs have stoped
 		js.wg.Wait()
-		log.Infof("all jobs have been handled")
+		ulog.Write("all jobs have been handled")
 		// now close the queue
 		close(js.queue)
 	})
@@ -107,11 +106,11 @@ func Start(ctx context.Context, r Runner) (int, error) {
 func Job(id int) *api.JobStatus {
 	job, ok, err := db.FindJobByID(js.db, id)
 	if err != nil {
-		log.Infof("cannot query for job id %d: %v", id, err)
+		ulog.Write("cannot query for job", "id", id, "err", err)
 		return &api.JobStatus{StatusID: db.StatusIDFailed, StatusName: db.StatusFailed}
 	}
 	if !ok {
-		log.Infof("cannot query for job id %d: no such job id", id)
+		ulog.Write("cannot query for job", "id", id, "err", "no such job id")
 		return &api.JobStatus{StatusID: db.StatusIDFailed, StatusName: db.StatusFailed}
 	}
 	return job
@@ -119,7 +118,11 @@ func Job(id int) *api.JobStatus {
 
 func jobs() {
 	for job := range js.queue {
-		log.Debugf("job: %v", job)
+		if job.r != nil {
+			ulog.Write("handling job", "id", job.id, "err", job.err, "runner", job.r.Name())
+		} else {
+			ulog.Write("handling job", "id", job.id, "err", job.err)
+		}
 		// we are done: cancel all running jobs
 		if job.stop {
 			for _, cancel := range js.cancelFuncs {
@@ -137,31 +140,31 @@ func jobs() {
 			go func() {
 				defer js.wg.Done()
 				js.queue <- s{id: id, err: r.Run(ctx)}
-				log.Infof("job %d: done", id)
+				ulog.Write("job done", "id", id)
 			}()
 			continue
 		}
 		// finished job: handle result and status accordingly
 		delete(js.cancelFuncs, job.id)
 		if job.err != nil {
-			log.Infof("job %d failed: %v", job.id, job.err)
+			ulog.Write("job failed", "id", job.id, "err", job.err)
 			if err := db.SetJobStatus(js.db, job.id, db.StatusIDFailed); err != nil {
-				log.Infof("cannot set job status to %s: %v", db.StatusFailed, err)
+				ulog.Write("cannot set job status", "status", db.StatusFailed, "err", err)
 			}
 			continue
 		}
 		if err := db.SetJobStatus(js.db, job.id, db.StatusIDDone); err != nil {
-			log.Infof("cannot set job status to %s: %v", db.StatusDone, err)
+			ulog.Write("cannot set job status", "status", db.StatusFailed, "err", err)
 		}
 	}
-	log.Debug("queue closed")
+	ulog.Write("queue closed")
 }
 
 // Run executes a command with the given context and arguments.  The
 // command's stderr is logged using log.Debug.  Run waits for the
 // command to finish and returns its result.
 func Run(ctx context.Context, cmd string, args ...string) error {
-	log.Debugf("running command: %s", strings.Join(append([]string{cmd}, args...), " "))
+	ulog.Write("running command", "cmd", cmd, "args", args)
 	exe := exec.CommandContext(ctx, cmd, args...)
 	stderr, err := exe.StderrPipe()
 	if err != nil {
@@ -171,7 +174,7 @@ func Run(ctx context.Context, cmd string, args ...string) error {
 		defer stderr.Close()
 		s := bufio.NewScanner(stderr)
 		for s.Scan() {
-			log.Debug(s.Text())
+			ulog.Write("stderr", "text", s.Text())
 		}
 		// we do not care about errors
 	}()
