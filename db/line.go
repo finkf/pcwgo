@@ -31,6 +31,7 @@ const tableContents = ContentsTableName + " (" +
 	"Cor INT NOT NULL," +
 	"Cut INT NOT NULL," +
 	"Conf double NOT NULL," +
+	"Cid int NOT NULL," +
 	"Manually boolean NOT NULL DEFAULT(false)," +
 	"PRIMARY KEY (BookID, PageID, LineID, Seq)" +
 	");"
@@ -282,8 +283,8 @@ func InsertLine(db DB, line *Line) error {
 		"(BookID,PageID,LineID,ImagePath,LLeft,LRight,LTop,LBottom) " +
 		"VALUES(?,?,?,?,?,?,?,?)"
 	const stmt2 = "INSERT INTO " + ContentsTableName +
-		"(BookID,PageID,LineID,OCR,Cor,Cut,Conf,Seq,ID,Manually) " +
-		"VALUES(?,?,?,?,?,?,?,?,?)"
+		"(BookID,PageID,LineID,OCR,Cor,Cut,Conf,Seq,Cid,Manually) " +
+		"VALUES(?,?,?,?,?,?,?,?,?,?)"
 	t := NewTransaction(Begin(db))
 	t.Do(func(db DB) error {
 		_, err := Exec(db, stmt1, line.BookID, line.PageID, line.LineID,
@@ -293,8 +294,7 @@ func InsertLine(db DB, line *Line) error {
 	for i, char := range line.Chars {
 		t.Do(func(db DB) error {
 			_, err := Exec(db, stmt2, line.BookID, line.PageID, line.LineID,
-				char.OCR, char.Cor, char.Cut, char.Conf, i, char.ID,
-				char.Manually)
+				char.OCR, char.Cor, char.Cut, char.Conf, i, char.ID, char.Manually)
 			return err
 		})
 	}
@@ -352,7 +352,7 @@ func FindPageLines(db DB, bookID, pageID int) ([]int, error) {
 func FindLineByID(db DB, bookID, pageID, lineID int) (*Line, bool, error) {
 	const stmt1 = "SELECT ImagePath,LLeft,LRight,LTop,LBottom FROM " +
 		TextLinesTableName + " WHERE BookID=? AND PageID=? AND LineID=?"
-	const stmt2 = "SELECT OCR,Cor,Cut,Conf,Seq,ID,Manually " +
+	const stmt2 = "SELECT OCR,Cor,Cut,Conf,Seq,Cid,Manually " +
 		"FROM " + ContentsTableName +
 		" WHERE BookID=? AND PageID=? AND LineID=? ORDER BY Seq"
 	// query for textlines content

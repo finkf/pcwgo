@@ -49,7 +49,6 @@ func newChars(id int) []Char {
 }
 
 func TestFindLineByID(t *testing.T) {
-	// log.SetLevel(log.DebugLevel)
 	sqlite.With("lines.sqlite", func(db *sql.DB) {
 		tests := []struct {
 			test *Line
@@ -75,5 +74,4 @@ func TestFindLineByID(t *testing.T) {
 			})
 		}
 	})
-	// log.SetLevel(log.DebugLevel)
 }
