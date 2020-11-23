@@ -377,9 +377,9 @@ func checkAuth(r *http.Request) (string, bool) {
 // WithLog wraps logging around the handling of the request.
 func WithLog(f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ulog.Write("handling", "method", r.Method, "url", r.URL)
+		ulog.Write("handling", "method", r.Method, "url", r.URL.String())
 		f(w, r)
-		ulog.Write("handled", "method", r.Method, "url", r.URL)
+		ulog.Write("handled", "method", r.Method, "url", r.URL.String())
 	}
 }
 
