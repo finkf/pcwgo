@@ -323,18 +323,21 @@ func parseInt(str string) (int, string, error) {
 }
 
 // WithAuth checks if the given request contains a valid
-// authentication token.  If not an appropriate error is returned
-// before the given callback function is called.  If the
-// authentification succeeds, the session is put into the context and
-// can be retrieved using AuthFromCtx(ctx).
+// authentication token.  The authentification token can either be a
+// auth=xyz query parameter or an Authorization header.
+//
+// If not an appropriate error is returned before the given callback
+// function is called.  If the authentification succeeds, the session
+// is put into the context and can be retrieved using
+// AuthFromCtx(ctx).
 func WithAuth(f HandlerFunc) HandlerFunc {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		if len(r.URL.Query()["auth"]) != 1 {
+		auth, ok := checkAuth(r)
+		if !ok {
 			ErrorResponse(w, http.StatusUnauthorized,
-				"cannot authenticate: missing auth parameter")
+				"cannot authenticate: missing authorization")
 			return
 		}
-		auth := r.URL.Query()["auth"][0]
 		ulog.Write("authenticating", "auth", auth)
 		s, found, err := db.FindSessionByID(pool, auth)
 		if err != nil {
@@ -357,6 +360,18 @@ func WithAuth(f HandlerFunc) HandlerFunc {
 		}
 		f(context.WithValue(ctx, authKey, s), w, r)
 	}
+}
+
+func checkAuth(r *http.Request) (string, bool) {
+	auth := r.Header.Get("Authorization")
+	if auth != "" {
+		return auth, true
+	}
+	auth = r.URL.Query().Get("auth")
+	if auth != "" {
+		return auth, true
+	}
+	return "", false
 }
 
 // WithLog wraps logging around the handling of the request.

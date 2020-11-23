@@ -9,6 +9,7 @@ import (
 	"image"
 	"image/png"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -62,6 +63,52 @@ func Login(host, email, password string, skipVerify bool) (*Client, error) {
 	ulog.Write("logged in", "session", s)
 	client.Session = s
 	return client, nil
+}
+
+// Do performes an authenticated HTTP request against a pocoweb
+// service.
+func (c Client) Do(req *http.Request) (*http.Response, error) {
+	req.Header.Add("Authorization", c.Session.Auth)
+	return c.client.Do(req)
+}
+
+// Get performes an authenticated HTTP get request against a pocoweb
+// service.  The response of the request is marshaled into the out
+// parameter unless the out parameter is set to nil.
+func (c Client) Get(url string, out interface{}) error {
+	req, err := http.NewRequest(http.MethodGet, url, http.NoBody)
+	if err != nil {
+		return err
+	}
+	resp, err := c.Do(req)
+	if err != nil {
+		return err
+	}
+	if out == nil {
+		resp.Body.Close()
+		return nil
+	}
+	return unmarshalResponse(resp, out)
+}
+
+func unmarshalResponse(resp *http.Response, out interface{}) error {
+	body, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode >= 400 {
+		errresp := ErrorResponse{
+			Status:     resp.Status,
+			StatusCode: resp.StatusCode,
+		}
+		err := json.Unmarshal(body, &errresp)
+		if err != nil {
+			return err
+		}
+		return errresp
+	}
+	return json.Unmarshal(body, out)
 }
 
 // GetLogin returns the session of the authentificated user.
