@@ -76,6 +76,7 @@ func (c Client) Do(req *http.Request) (*http.Response, error) {
 // service.  The response of the request is marshaled into the out
 // parameter unless the out parameter is set to nil.
 func (c Client) Get(url string, out interface{}) error {
+	ulog.Write("GET", "url", url)
 	req, err := http.NewRequest(http.MethodGet, url, http.NoBody)
 	if err != nil {
 		return err
@@ -104,7 +105,7 @@ func unmarshalResponse(resp *http.Response, out interface{}) error {
 		}
 		err := json.Unmarshal(body, &errresp)
 		if err != nil {
-			return err
+			return errresp
 		}
 		return errresp
 	}
