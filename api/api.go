@@ -443,9 +443,9 @@ func NewErrorResponse(code int, cause string) ErrorResponse {
 
 func (err ErrorResponse) Error() string {
 	if err.Cause == "" {
-		return fmt.Sprintf("%d %s", err.StatusCode, err.Status)
+		return err.Status
 	}
-	return fmt.Sprintf("%s [%d %s]", err.Cause, err.StatusCode, err.Status)
+	return fmt.Sprintf("%s [%s]", err.Cause, err.Status)
 }
 
 // IsValidJSONResponse returns true if the given response matches one
