@@ -389,7 +389,8 @@ func ErrorResponse(w http.ResponseWriter, s int, f string, args ...interface{}) 
 	message := fmt.Sprintf(f, args...)
 	status := http.StatusText(s)
 	ulog.Write("error response", "err", message, "status", status, "code", s)
-	w.Header().Set("Content-Type", "application/json") // set Content-Type before call to WriteHeader
+	// We must set the Content-Type before the call to WriteHeader.
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(s)
 	JSONResponse(w, struct {
 		Code    int    `json:"code"`
