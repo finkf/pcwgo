@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -10,7 +11,9 @@ import (
 // DB defines a simple interface for database handling.
 type DB interface {
 	Exec(string, ...interface{}) (sql.Result, error)
+	ExecContext(context.Context, string, ...interface{}) (sql.Result, error)
 	Query(string, ...interface{}) (*sql.Rows, error)
+	QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)
 	Begin() (*sql.Tx, error)
 	Prepare(string) (*sql.Stmt, error)
 }
@@ -21,10 +24,22 @@ func Exec(db DB, stmt string, args ...interface{}) (sql.Result, error) {
 	return db.Exec(stmt, args...)
 }
 
+// ExecContext calls Exec on the given DB handle. The given args are logged.
+func ExecContext(ctx context.Context, db DB, stmt string, args ...interface{}) (sql.Result, error) {
+	ulog.Write("exec", "stmt", stmt, "args", args)
+	return db.ExecContext(ctx, stmt, args...)
+}
+
 // Query calls Query on the given DB handle. The given args are logged.
 func Query(db DB, stmt string, args ...interface{}) (*sql.Rows, error) {
 	ulog.Write("query", "stmt", stmt, "args", args)
 	return db.Query(stmt, args...)
+}
+
+// QueryContext calls Query on the given DB handle. The given args are logged.
+func QueryContext(ctx context.Context, db DB, stmt string, args ...interface{}) (*sql.Rows, error) {
+	ulog.Write("query", "stmt", stmt, "args", args)
+	return db.QueryContext(ctx, stmt, args...)
 }
 
 // Begin calls Begin on the given DB handle and logs the beginning of
@@ -56,12 +71,28 @@ func (t *Transaction) Exec(stmt string, args ...interface{}) (sql.Result, error)
 	return t.tx.Exec(stmt, args...)
 }
 
+// Exec executes the given statement.
+func (t *Transaction) ExecContext(ctx context.Context, stmt string, args ...interface{}) (sql.Result, error) {
+	if t.err != nil {
+		return nil, fmt.Errorf("cannot exec: transaction error: %v", t.err)
+	}
+	return t.tx.ExecContext(ctx, stmt, args...)
+}
+
 // Query executes the given query statement.
 func (t *Transaction) Query(stmt string, args ...interface{}) (*sql.Rows, error) {
 	if t.err != nil {
 		return nil, fmt.Errorf("cannot query: transaction error: %v", t.err)
 	}
 	return t.tx.Query(stmt, args...)
+}
+
+// Query executes the given query statement.
+func (t *Transaction) QueryContext(ctx context.Context, stmt string, args ...interface{}) (*sql.Rows, error) {
+	if t.err != nil {
+		return nil, fmt.Errorf("cannot query: transaction error: %v", t.err)
+	}
+	return t.tx.QueryContext(ctx, stmt, args...)
 }
 
 // Prepare prease a statement.
