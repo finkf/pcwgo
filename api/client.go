@@ -59,9 +59,7 @@ func Login(host, email, password string, skipVerify bool) (*Client, error) {
 
 // URL returns the formated url with the client's host prepended.
 func (c Client) URL(format string, args ...interface{}) string {
-	return strings.TrimRight(c.Host, "/") + "/rest/" +
-		strings.TrimLeft(fmt.Sprintf(format, args...), "/")
-
+	return strings.TrimRight(c.Host, "/") + "/" + strings.TrimLeft(fmt.Sprintf(format, args...), "/")
 }
 
 // Do performes an authenticated HTTP request against a pocoweb
