@@ -9,8 +9,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
-
-	"github.com/UNO-SOFT/ulog"
 )
 
 // Client implements the api calls for the pcw backend.
@@ -120,7 +118,6 @@ func (c Client) Put(url string, payload, out interface{}) error {
 	if err != nil {
 		return fmt.Errorf("PUT %s: %v", url, err)
 	}
-	ulog.Write("Put", "payload", string(body))
 	req, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("PUT %s: %v", url, err)
